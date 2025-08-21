@@ -2,7 +2,7 @@ use std::collections::{BTreeMap};
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq)]
 pub struct Trace {
     pub packages: BTreeMap<String, PkgTrace>,
 }
@@ -12,22 +12,14 @@ pub struct PkgTrace {
     pub directory: String,
 
     #[serde(with = "trace_map_as_map")]
-    pub maps: BTreeMap<TraceSrc, TraceDst>,
+    pub maps: BTreeMap<String, String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 struct TraceMap {
-    pub src: TraceSrc,
-    pub dst: TraceDst,
+    pub src: String,
+    pub dst: String
 }
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[serde(transparent)]
-pub struct TraceSrc(pub String);
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[serde(transparent)]
-pub struct TraceDst(pub String);
 
 mod trace_map_as_map {
     use serde::{Serializer, Deserializer};
@@ -35,7 +27,7 @@ mod trace_map_as_map {
     use super::*;
 
     pub fn serialize<S>(
-        map: &BTreeMap<TraceSrc, TraceDst>,
+        map: &BTreeMap<String, String>,
         serializer: S
     ) -> Result<S::Ok, S::Error>
     where
@@ -50,7 +42,7 @@ mod trace_map_as_map {
 
     pub fn deserialize<'de, D>(
         deserializer: D
-    ) -> Result<BTreeMap<TraceSrc, TraceDst>, D::Error>
+    ) -> Result<BTreeMap<String, String>, D::Error>
     where
         D: Deserializer<'de>
     {
@@ -70,8 +62,8 @@ mod tests {
         let trace = PkgTrace {
             directory: "test_dir".to_string(),
             maps: BTreeMap::from([
-                (TraceSrc("src1".to_string()), TraceDst("dst1".to_string())),
-                (TraceSrc("src2".to_string()), TraceDst("dst2".to_string())),
+                ("src1".to_string(), "dst1".to_string()),
+                ("src2".to_string(), "dst2".to_string()),
             ]),
         };
 

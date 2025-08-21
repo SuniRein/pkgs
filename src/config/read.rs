@@ -42,7 +42,7 @@ mod tests {
     use indoc::indoc;
 
     use super::*;
-    use crate::config::{PackageType, MappingSrc, MappingDst};
+    use crate::config::PackageType;
 
     const TOML_CONTENT: &str = indoc! {r#"
         [packages.yazi]
@@ -59,8 +59,8 @@ mod tests {
         [packages."empty maps"]
     "#};
 
-    fn expect_map(map: &HashMap<MappingSrc, MappingDst>, key: &str, value: &str) {
-        expect_that!(map, has_entry(MappingSrc(key.to_string()), eq(&MappingDst(value.to_string()))));
+    fn expect_map(map: &HashMap<String, String>, key: &str, value: &str) {
+        expect_that!(map, has_entry(key.to_string(), eq(&value.to_string())));
     }
 
     mod toml_parse {

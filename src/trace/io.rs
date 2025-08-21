@@ -42,7 +42,7 @@ mod tests {
     use googletest::prelude::*;
 
     use super::*;
-    use crate::trace::{Trace, PkgTrace, TraceSrc, TraceDst};
+    use crate::trace::{Trace, PkgTrace};
 
     #[gtest]
     fn write_and_read_trace() {
@@ -50,14 +50,14 @@ mod tests {
             ("pkg1".to_string(), PkgTrace {
                 directory: "dir1".to_string(),
                 maps: BTreeMap::from([
-                    (TraceSrc("src1".to_string()), TraceDst("dst1".to_string())),
-                    (TraceSrc("src2".to_string()), TraceDst("dst2".to_string())),
+                    ("src1".to_string(), "dst1".to_string()),
+                    ("src2".to_string(), "dst2".to_string()),
                 ]),
             }),
             ("pkg2".to_string(), PkgTrace {
                 directory: "dir2".to_string(),
                 maps: BTreeMap::from([
-                    (TraceSrc("src3".to_string()), TraceDst("dst3".to_string())),
+                    ("src3".to_string(), "dst3".to_string()),
                 ]),
             }),
         ]) };

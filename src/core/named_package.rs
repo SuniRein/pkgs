@@ -22,6 +22,10 @@ impl NamedPackage {
         }
     }
 
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
     pub fn kind(&self) -> PackageType {
         self.package.kind
     }

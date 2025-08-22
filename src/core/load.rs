@@ -4,8 +4,9 @@ use std::path::{Path, PathBuf};
 
 use thiserror::Error;
 
-use super::utils::create_symlink;
 use super::NamedPackage;
+use super::utils::create_symlink;
+use crate::logger::{Logger, LoggerOutput};
 use crate::trace::PkgTrace;
 
 #[derive(Debug, Error)]
@@ -20,19 +21,26 @@ pub enum LoadError {
     DstAlreadyExists { src: PathBuf, dst: PathBuf },
 }
 
-pub fn load(
+pub fn load<O: LoggerOutput>(
     root: &Path,
     package: &NamedPackage,
     trace: Option<&PkgTrace>,
+    logger: &mut Logger<O>,
 ) -> Result<PkgTrace, LoadError> {
+    logger.load_module(package.name());
+
     if let Some(trace) = trace {
-        load_with_trace(root, package, trace)
+        load_with_trace(root, package, trace, logger)
     } else {
-        load_directly(root, package)
+        load_directly(root, package, logger)
     }
 }
 
-fn load_directly(root: &Path, package: &NamedPackage) -> Result<PkgTrace, LoadError> {
+fn load_directly<O: LoggerOutput>(
+    root: &Path,
+    package: &NamedPackage,
+    logger: &mut Logger<O>,
+) -> Result<PkgTrace, LoadError> {
     let mut trace = PkgTrace {
         directory: package.get_directory(),
         maps: BTreeMap::new(),
@@ -58,10 +66,12 @@ fn load_directly(root: &Path, package: &NamedPackage) -> Result<PkgTrace, LoadEr
             && !parent.exists()
         {
             fs::create_dir_all(parent)?;
+            logger.create_dir(parent);
         }
 
         let src_abs = src_path.canonicalize()?;
         create_symlink(&src_abs, dst)?;
+        logger.create_symlink(&src_abs, &dst_path);
 
         let dst_abs = dst_path.canonicalize()?;
         trace
@@ -72,10 +82,11 @@ fn load_directly(root: &Path, package: &NamedPackage) -> Result<PkgTrace, LoadEr
     Ok(trace)
 }
 
-fn load_with_trace(
+fn load_with_trace<O: LoggerOutput>(
     _root: &Path,
     _package: &NamedPackage,
     _trace: &PkgTrace,
+    _output: &mut Logger<O>,
 ) -> Result<PkgTrace, LoadError> {
     todo!();
 }
@@ -93,6 +104,7 @@ mod tests {
 
         use super::*;
         use crate::config::{Package, PackageType};
+        use crate::logger::{LogMessage, null_logger};
 
         const SRC_FILE_PATH: &str = "test_package/src_file";
         const SRC_DIR_PATH: &str = "test_package/src_dir";
@@ -128,7 +140,7 @@ mod tests {
             let td = setup_dir()?;
             let pkg = setup_pkg(&td);
 
-            let trace = load(td.path(), &pkg, None)?;
+            let trace = load(td.path(), &pkg, None, &mut null_logger())?;
 
             let dst_file = td.path().join(DST_FILE_PATH);
             let dst_dir = td.path().join(DST_DIR_PATH);
@@ -166,12 +178,46 @@ mod tests {
         }
 
         #[gtest]
+        fn logger_output() -> Result<()> {
+            let td = setup_dir()?;
+            let pkg = setup_pkg(&td);
+            let mut logger = null_logger();
+            load(td.path(), &pkg, None, &mut logger)?;
+
+            let messages = logger.messages();
+            expect_eq!(messages.len(), 5);
+            expect_eq!(messages[0], LogMessage::LoadModule("test_package".into()));
+            expect_that!(
+                messages,
+                superset_of([
+                    &LogMessage::CreateDir(td.path().join("./test_pkg")),
+                    &LogMessage::CreateSymlink {
+                        src: td.path().join(SRC_FILE_PATH).canonicalize()?,
+                        dst: td.path().join(DST_FILE_PATH)
+                    }
+                ])
+            );
+            expect_that!(
+                messages,
+                superset_of([
+                    &LogMessage::CreateDir(td.path().join("./test_a/test_b")),
+                    &LogMessage::CreateSymlink {
+                        src: td.path().join(SRC_DIR_PATH).canonicalize()?,
+                        dst: td.path().join(DST_DIR_PATH)
+                    }
+                ])
+            );
+
+            Ok(())
+        }
+
+        #[gtest]
         fn src_not_exists() -> Result<()> {
             let td = setup_dir()?;
             let pkg = setup_pkg(&td);
             fs::remove_file(td.path().join(SRC_FILE_PATH))?;
 
-            let result = load(td.path(), &pkg, None).unwrap_err();
+            let result = load(td.path(), &pkg, None, &mut null_logger()).unwrap_err();
             expect_that!(result, pat!(LoadError::SrcNotExists(_)));
 
             Ok(())
@@ -183,7 +229,7 @@ mod tests {
             let pkg = setup_pkg(&td);
             fs::create_dir_all(td.path().join(DST_FILE_PATH))?;
 
-            let result = load(td.path(), &pkg, None).unwrap_err();
+            let result = load(td.path(), &pkg, None, &mut null_logger()).unwrap_err();
             expect_that!(result, pat!(LoadError::DstAlreadyExists { .. }));
 
             Ok(())

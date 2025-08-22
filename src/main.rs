@@ -3,8 +3,9 @@ use std::path::Path;
 use std::process;
 
 use pkgs::config::Config;
-use pkgs::core::load;
 use pkgs::core::NamedPackage;
+use pkgs::core::load;
+use pkgs::logger::{Logger, WriterOutput};
 use pkgs::meta::{PKGS_DIR, TOML_CONFIG_FILE, TRACE_FILE};
 use pkgs::trace::Trace;
 
@@ -23,13 +24,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Trace::default()
     };
 
+    let stdout = WriterOutput::new(std::io::stdout());
+    let mut logger = Logger::new(stdout);
+
     let root = std::env::current_dir()?;
 
     for (name, package) in config.packages {
         let pkg_trace = trace.packages.get(&name);
         let named_package = NamedPackage::new(&name, package);
 
-        match load(&root, &named_package, pkg_trace) {
+        match load(&root, &named_package, pkg_trace, &mut logger) {
             Ok(pkg_trace) => {
                 println!("Loaded package: {name}");
                 trace.packages.insert(name.clone(), pkg_trace);

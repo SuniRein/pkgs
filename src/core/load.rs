@@ -96,12 +96,10 @@ mod tests {
     use googletest::prelude::*;
 
     use super::*;
-    use crate::test_utils::matchers::is_symlink_for;
+    use crate::test_utils::{TempDir, matchers::is_symlink_for};
 
     mod load_without_trace {
         use std::collections::HashMap;
-
-        use tempfile::TempDir;
 
         use super::*;
         use crate::config::{Package, PackageType};
@@ -114,8 +112,8 @@ mod tests {
         const DST_DIR_PATH: &str = "./test_a/test_b/dst_dir";
 
         fn setup_pkg(td: &TempDir) -> NamedPackage {
-            let dst_file_path = td.path().join(DST_FILE_PATH).to_str().unwrap().to_string();
-            let dst_dir_path = td.path().join(DST_DIR_PATH).to_str().unwrap().to_string();
+            let dst_file_path = td.join(DST_FILE_PATH).to_str().unwrap().to_string();
+            let dst_dir_path = td.join(DST_DIR_PATH).to_str().unwrap().to_string();
 
             let package = Package {
                 kind: PackageType::Local,
@@ -128,12 +126,9 @@ mod tests {
         }
 
         fn setup_dir() -> Result<TempDir> {
-            let td = TempDir::new()?;
-            let pkg_dir = td.path().join("test_package");
-            fs::create_dir_all(&pkg_dir)?;
-            fs::create_dir_all(pkg_dir.join("src_dir"))?;
-            fs::write(pkg_dir.join("src_file"), "test content")?;
-            Ok(td)
+            TempDir::new()?
+                .dir(SRC_DIR_PATH)?
+                .file(SRC_FILE_PATH, "test_content")
         }
 
         #[gtest]
@@ -141,20 +136,20 @@ mod tests {
             let td = setup_dir()?;
             let pkg = setup_pkg(&td);
 
-            let trace = load(td.path(), &pkg, None, &mut null_logger())?;
+            let trace = load(td.0.path(), &pkg, None, &mut null_logger())?;
 
-            let dst_file = td.path().join(DST_FILE_PATH);
-            let dst_dir = td.path().join(DST_DIR_PATH);
+            let dst_file = td.join(DST_FILE_PATH);
+            let dst_dir = td.join(DST_DIR_PATH);
 
             expect_that!(
                 dst_file,
-                is_symlink_for(td.path().join(SRC_FILE_PATH).canonicalize()?),
+                is_symlink_for(td.join(SRC_FILE_PATH).canonicalize()?),
                 "dst_file should point to the absolute path of src_file"
             );
 
             expect_that!(
                 dst_dir,
-                is_symlink_for(td.path().join(SRC_DIR_PATH).canonicalize()?),
+                is_symlink_for(td.join(SRC_DIR_PATH).canonicalize()?),
                 "dst_dir should point to the absolute path of src_dir"
             );
 
@@ -187,20 +182,20 @@ mod tests {
             expect_that!(
                 messages,
                 superset_of([
-                    &LogMessage::CreateDir(td.path().join("./test_pkg")),
+                    &LogMessage::CreateDir(td.join("./test_pkg")),
                     &LogMessage::CreateSymlink {
-                        src: td.path().join(SRC_FILE_PATH).canonicalize()?,
-                        dst: td.path().join(DST_FILE_PATH)
+                        src: td.join(SRC_FILE_PATH).canonicalize()?,
+                        dst: td.join(DST_FILE_PATH)
                     }
                 ])
             );
             expect_that!(
                 messages,
                 superset_of([
-                    &LogMessage::CreateDir(td.path().join("./test_a/test_b")),
+                    &LogMessage::CreateDir(td.join("./test_a/test_b")),
                     &LogMessage::CreateSymlink {
-                        src: td.path().join(SRC_DIR_PATH).canonicalize()?,
-                        dst: td.path().join(DST_DIR_PATH)
+                        src: td.join(SRC_DIR_PATH).canonicalize()?,
+                        dst: td.join(DST_DIR_PATH)
                     }
                 ])
             );
@@ -212,7 +207,7 @@ mod tests {
         fn src_not_exists() -> Result<()> {
             let td = setup_dir()?;
             let pkg = setup_pkg(&td);
-            fs::remove_file(td.path().join(SRC_FILE_PATH))?;
+            fs::remove_file(td.join(SRC_FILE_PATH))?;
 
             let result = load(td.path(), &pkg, None, &mut null_logger()).unwrap_err();
             expect_that!(result, pat!(LoadError::SrcNotExists(_)));
@@ -224,7 +219,7 @@ mod tests {
         fn dst_already_exists() -> Result<()> {
             let td = setup_dir()?;
             let pkg = setup_pkg(&td);
-            fs::create_dir_all(td.path().join(DST_FILE_PATH))?;
+            fs::create_dir_all(td.join(DST_FILE_PATH))?;
 
             let result = load(td.path(), &pkg, None, &mut null_logger()).unwrap_err();
             expect_that!(result, pat!(LoadError::DstAlreadyExists { .. }));

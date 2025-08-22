@@ -1,10 +1,7 @@
-use std::path::Path;
 use std::io;
+use std::path::Path;
 
-pub fn create_symlink<S: AsRef<Path>, D: AsRef<Path>>(
-    src: S,
-    dst: D
-) -> io::Result<()> {
+pub fn create_symlink<S: AsRef<Path>, D: AsRef<Path>>(src: S, dst: D) -> io::Result<()> {
     if !src.as_ref().exists() {
         Err(io::Error::new(
             io::ErrorKind::NotFound,
@@ -22,7 +19,7 @@ pub fn create_symlink<S: AsRef<Path>, D: AsRef<Path>>(
 
     #[cfg(windows)]
     {
-        use std::os::windows::fs::{symlink_file, symlink_dir};
+        use std::os::windows::fs::{symlink_dir, symlink_file};
 
         if src.is_dir() {
             symlink_dir(src, dst)
@@ -37,8 +34,8 @@ mod tests {
     use std::fs::{self, File};
     use std::io::{self, Write};
 
-    use tempfile::tempdir;
     use googletest::prelude::*;
+    use tempfile::tempdir;
 
     use super::*;
 

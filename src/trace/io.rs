@@ -1,10 +1,10 @@
-use std::path::Path;
-use std::io;
 use std::fs;
+use std::io;
+use std::path::Path;
 
+use thiserror::Error;
 use toml::de::Error as TomlDeError;
 use toml::ser::Error as TomlSerError;
-use thiserror::Error;
 
 use super::Trace;
 
@@ -35,32 +35,38 @@ impl Trace {
 }
 #[cfg(test)]
 mod tests {
-    use std::{collections::BTreeMap};
+    use std::collections::BTreeMap;
     use std::io::Write;
 
-    use tempfile::NamedTempFile;
     use googletest::prelude::*;
+    use tempfile::NamedTempFile;
 
     use super::*;
-    use crate::trace::{Trace, PkgTrace};
+    use crate::trace::{PkgTrace, Trace};
 
     #[gtest]
     fn write_and_read_trace() {
-        let trace = Trace {packages: BTreeMap::from([
-            ("pkg1".to_string(), PkgTrace {
-                directory: "dir1".to_string(),
-                maps: BTreeMap::from([
-                    ("src1".to_string(), "dst1".to_string()),
-                    ("src2".to_string(), "dst2".to_string()),
-                ]),
-            }),
-            ("pkg2".to_string(), PkgTrace {
-                directory: "dir2".to_string(),
-                maps: BTreeMap::from([
-                    ("src3".to_string(), "dst3".to_string()),
-                ]),
-            }),
-        ]) };
+        let trace = Trace {
+            packages: BTreeMap::from([
+                (
+                    "pkg1".to_string(),
+                    PkgTrace {
+                        directory: "dir1".to_string(),
+                        maps: BTreeMap::from([
+                            ("src1".to_string(), "dst1".to_string()),
+                            ("src2".to_string(), "dst2".to_string()),
+                        ]),
+                    },
+                ),
+                (
+                    "pkg2".to_string(),
+                    PkgTrace {
+                        directory: "dir2".to_string(),
+                        maps: BTreeMap::from([("src3".to_string(), "dst3".to_string())]),
+                    },
+                ),
+            ]),
+        };
 
         let file = NamedTempFile::new().unwrap();
         trace.write_to_file(file.path()).unwrap();
@@ -83,4 +89,3 @@ mod tests {
         assert_that!(result, pat!(TraceIoError::Parse(_)));
     }
 }
-

@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap};
+use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
 
@@ -18,33 +18,31 @@ pub struct PkgTrace {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 struct TraceMap {
     pub src: String,
-    pub dst: String
+    pub dst: String,
 }
 
 mod trace_map_as_map {
-    use serde::{Serializer, Deserializer};
+    use serde::{Deserializer, Serializer};
 
     use super::*;
 
-    pub fn serialize<S>(
-        map: &BTreeMap<String, String>,
-        serializer: S
-    ) -> Result<S::Ok, S::Error>
+    pub fn serialize<S>(map: &BTreeMap<String, String>, serializer: S) -> Result<S::Ok, S::Error>
     where
-        S: Serializer
+        S: Serializer,
     {
         let v: Vec<TraceMap> = map
             .iter()
-            .map(|(src, dst)| TraceMap {src: src.clone(), dst: dst.clone()})
+            .map(|(src, dst)| TraceMap {
+                src: src.clone(),
+                dst: dst.clone(),
+            })
             .collect();
         v.serialize(serializer)
     }
 
-    pub fn deserialize<'de, D>(
-        deserializer: D
-    ) -> Result<BTreeMap<String, String>, D::Error>
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<BTreeMap<String, String>, D::Error>
     where
-        D: Deserializer<'de>
+        D: Deserializer<'de>,
     {
         let v = Vec::<TraceMap>::deserialize(deserializer)?;
         Ok(v.into_iter().map(|m| (m.src, m.dst)).collect())
@@ -53,7 +51,7 @@ mod trace_map_as_map {
 
 #[cfg(test)]
 mod tests {
-    use serde_test::{Token, assert_tokens};
+    use serde_test::{assert_tokens, Token};
 
     use super::*;
 
@@ -67,40 +65,38 @@ mod tests {
             ]),
         };
 
-        assert_tokens(&trace, &[
-            Token::Struct {
-                name: "PkgTrace",
-                len: 2,
-            },
-
-            Token::Str("directory"),
-            Token::Str("test_dir"),
-
-            Token::Str("maps"),
-            Token::Seq { len: Some(2) },
-
-            Token::Struct {
-                name: "TraceMap",
-                len: 2,
-            },
-            Token::Str("src"),
-            Token::Str("src1"),
-            Token::Str("dst"),
-            Token::Str("dst1"),
-            Token::StructEnd,
-
-            Token::Struct {
-                name: "TraceMap",
-                len: 2,
-            },
-            Token::Str("src"),
-            Token::Str("src2"),
-            Token::Str("dst"),
-            Token::Str("dst2"),
-            Token::StructEnd,
-
-            Token::SeqEnd,
-            Token::StructEnd,
-        ])
+        assert_tokens(
+            &trace,
+            &[
+                Token::Struct {
+                    name: "PkgTrace",
+                    len: 2,
+                },
+                Token::Str("directory"),
+                Token::Str("test_dir"),
+                Token::Str("maps"),
+                Token::Seq { len: Some(2) },
+                Token::Struct {
+                    name: "TraceMap",
+                    len: 2,
+                },
+                Token::Str("src"),
+                Token::Str("src1"),
+                Token::Str("dst"),
+                Token::Str("dst1"),
+                Token::StructEnd,
+                Token::Struct {
+                    name: "TraceMap",
+                    len: 2,
+                },
+                Token::Str("src"),
+                Token::Str("src2"),
+                Token::Str("dst"),
+                Token::Str("dst2"),
+                Token::StructEnd,
+                Token::SeqEnd,
+                Token::StructEnd,
+            ],
+        )
     }
 }

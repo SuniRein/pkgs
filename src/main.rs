@@ -1,12 +1,12 @@
+use std::fs;
 use std::path::Path;
 use std::process;
-use std::fs;
 
 use pkgs::config::Config;
-use pkgs::core::NamedPackage;
-use pkgs::trace::Trace;
 use pkgs::core::load;
-use pkgs::meta::{TOML_CONFIG_FILE, PKGS_DIR, TRACE_FILE};
+use pkgs::core::NamedPackage;
+use pkgs::meta::{PKGS_DIR, TOML_CONFIG_FILE, TRACE_FILE};
+use pkgs::trace::Trace;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = Config::read(Path::new(TOML_CONFIG_FILE))?;

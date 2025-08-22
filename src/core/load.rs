@@ -1,12 +1,12 @@
 use std::collections::BTreeMap;
 use std::fs;
-use std::path::{PathBuf, Path};
+use std::path::{Path, PathBuf};
 
 use thiserror::Error;
 
-use crate::trace::PkgTrace;
-use super::{NamedPackage};
 use super::utils::create_symlink;
+use super::NamedPackage;
+use crate::trace::PkgTrace;
 
 #[derive(Debug, Error)]
 pub enum LoadError {
@@ -17,10 +17,7 @@ pub enum LoadError {
     SrcNotExists(String),
 
     #[error("'{dst}' for '{src}' already exists")]
-    DstAlreadyExists {
-        src: PathBuf,
-        dst: PathBuf
-    },
+    DstAlreadyExists { src: PathBuf, dst: PathBuf },
 }
 
 pub fn load(
@@ -35,10 +32,7 @@ pub fn load(
     }
 }
 
-fn load_directly(
-    root: &Path,
-    package: &NamedPackage
-) -> Result<PkgTrace, LoadError> {
+fn load_directly(root: &Path, package: &NamedPackage) -> Result<PkgTrace, LoadError> {
     let mut trace = PkgTrace {
         directory: package.get_directory(),
         maps: BTreeMap::new(),
@@ -54,10 +48,15 @@ fn load_directly(
 
         let dst_path = PathBuf::from(&dst);
         if dst_path.exists() {
-            return Err(LoadError::DstAlreadyExists { src: src_path, dst: dst_path });
+            return Err(LoadError::DstAlreadyExists {
+                src: src_path,
+                dst: dst_path,
+            });
         }
 
-        if let Some(parent) = dst_path.parent() && !parent.exists() {
+        if let Some(parent) = dst_path.parent()
+            && !parent.exists()
+        {
             fs::create_dir_all(parent)?;
         }
 
@@ -65,10 +64,9 @@ fn load_directly(
         create_symlink(&src_abs, dst)?;
 
         let dst_abs = dst_path.canonicalize()?;
-        trace.maps.insert(
-            src.into(),
-            dst_abs.to_str().unwrap().to_string()
-        );
+        trace
+            .maps
+            .insert(src.into(), dst_abs.to_str().unwrap().to_string());
     }
 
     Ok(trace)
@@ -111,9 +109,9 @@ mod tests {
                 maps: HashMap::from([
                     ("src_file".into(), dst_file_path),
                     ("src_dir".into(), dst_dir_path),
-                ])
+                ]),
             };
-             NamedPackage::new("test_package", package)
+            NamedPackage::new("test_package", package)
         }
 
         fn setup_dir() -> Result<TempDir> {
@@ -138,25 +136,29 @@ mod tests {
             expect_pred!(dst_file.exists());
             expect_pred!(dst_file.is_symlink());
             expect_eq!(
-                dst_file.read_link()?, td.path().join(SRC_FILE_PATH).canonicalize()?,
+                dst_file.read_link()?,
+                td.path().join(SRC_FILE_PATH).canonicalize()?,
                 "dst_file should point to the absolute path of src_file"
             );
 
             expect_pred!(dst_dir.exists());
             expect_pred!(dst_dir.is_symlink());
             expect_eq!(
-                dst_dir.read_link()?, td.path().join(SRC_DIR_PATH).canonicalize()?,
+                dst_dir.read_link()?,
+                td.path().join(SRC_DIR_PATH).canonicalize()?,
                 "dst_dir should point to the absolute path of src_dir"
             );
 
             expect_eq!(trace.directory, "test_package");
             expect_eq!(trace.maps.len(), 2);
             expect_eq!(
-                trace.maps["src_file"], dst_file.canonicalize()?.to_str().unwrap(),
+                trace.maps["src_file"],
+                dst_file.canonicalize()?.to_str().unwrap(),
                 "src_file should map to the absolute path of dst_file in trace"
             );
             expect_eq!(
-                trace.maps["src_dir"], dst_dir.canonicalize()?.to_str().unwrap(),
+                trace.maps["src_dir"],
+                dst_dir.canonicalize()?.to_str().unwrap(),
                 "src_dir should map to the absolute path of dst_dir in trace"
             );
 

@@ -1,4 +1,4 @@
-use std::{collections::HashMap};
+use std::collections::HashMap;
 
 use crate::config::{Package, PackageType};
 
@@ -12,13 +12,13 @@ impl NamedPackage {
     pub fn new(name: &str, package: Package) -> Self {
         Self {
             name: name.to_string(),
-            package
+            package,
         }
     }
 
     pub fn get_directory(&self) -> String {
         match self.kind() {
-            PackageType::Local => self.name.to_string()
+            PackageType::Local => self.name.to_string(),
         }
     }
 

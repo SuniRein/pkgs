@@ -1,6 +1,6 @@
-use std::path::{PathBuf, Path};
 use std::fs;
 use std::io;
+use std::path::{Path, PathBuf};
 
 use thiserror::Error;
 use toml::de::Error as TomlDeError;
@@ -16,7 +16,7 @@ pub enum ConfigError {
     Parse(#[from] TomlDeError),
 
     #[error("unsupported file format: {0}")]
-    UnsupportedFileFormat(PathBuf)
+    UnsupportedFileFormat(PathBuf),
 }
 
 impl Config {
@@ -75,12 +75,24 @@ mod tests {
             expect_eq!(config.packages["yazi"].kind, PackageType::Local);
             expect_eq!(config.packages["yazi"].maps.len(), 2);
             expect_map(&config.packages["yazi"].maps, "yazi", "${CONFIG_DIR}/yazi");
-            expect_map(&config.packages["yazi"].maps, "yazi.nu", "${NU_AUTOLOAD}/yazi.nu");
+            expect_map(
+                &config.packages["yazi"].maps,
+                "yazi.nu",
+                "${NU_AUTOLOAD}/yazi.nu",
+            );
 
             expect_eq!(config.packages["kitty"].kind, PackageType::Local);
             expect_eq!(config.packages["kitty"].maps.len(), 2);
-            expect_map(&config.packages["kitty"].maps, "kitty", "${CONFIG_DIR}/kitty");
-            expect_map(&config.packages["kitty"].maps, "kitty.desktop", "${DESKTOP_DIR}/kitty.desktop");
+            expect_map(
+                &config.packages["kitty"].maps,
+                "kitty",
+                "${CONFIG_DIR}/kitty",
+            );
+            expect_map(
+                &config.packages["kitty"].maps,
+                "kitty.desktop",
+                "${DESKTOP_DIR}/kitty.desktop",
+            );
 
             expect_eq!(config.packages["empty maps"].kind, PackageType::Local);
             expect_that!(config.packages["empty maps"].maps, is_empty());

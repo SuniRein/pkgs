@@ -96,6 +96,7 @@ mod tests {
     use googletest::prelude::*;
 
     use super::*;
+    use crate::test_utils::matchers::is_symlink_for;
 
     mod load_without_trace {
         use std::collections::HashMap;
@@ -145,19 +146,15 @@ mod tests {
             let dst_file = td.path().join(DST_FILE_PATH);
             let dst_dir = td.path().join(DST_DIR_PATH);
 
-            expect_pred!(dst_file.exists());
-            expect_pred!(dst_file.is_symlink());
-            expect_eq!(
-                dst_file.read_link()?,
-                td.path().join(SRC_FILE_PATH).canonicalize()?,
+            expect_that!(
+                dst_file,
+                is_symlink_for(td.path().join(SRC_FILE_PATH).canonicalize()?),
                 "dst_file should point to the absolute path of src_file"
             );
 
-            expect_pred!(dst_dir.exists());
-            expect_pred!(dst_dir.is_symlink());
-            expect_eq!(
-                dst_dir.read_link()?,
-                td.path().join(SRC_DIR_PATH).canonicalize()?,
+            expect_that!(
+                dst_dir,
+                is_symlink_for(td.path().join(SRC_DIR_PATH).canonicalize()?),
                 "dst_dir should point to the absolute path of src_dir"
             );
 

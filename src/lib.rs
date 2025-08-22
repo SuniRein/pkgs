@@ -3,3 +3,6 @@ pub mod core;
 pub mod logger;
 pub mod meta;
 pub mod trace;
+
+#[cfg(test)]
+mod test_utils;

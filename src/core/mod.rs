@@ -1,6 +1,6 @@
 mod load;
 mod named_package;
-mod utils;
+pub mod utils;
 
 use thiserror::Error;
 

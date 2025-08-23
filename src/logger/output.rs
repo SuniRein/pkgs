@@ -38,6 +38,11 @@ impl<W: Write> LoggerOutput for WriterOutput<W> {
                 dst.to_string_lossy(),
                 src.to_string_lossy()
             ),
+            LogMessage::RemoveSymlink { src, dst } => format!(
+                "Remove Symlink {} -> {}",
+                dst.to_string_lossy(),
+                src.to_string_lossy()
+            ),
         };
 
         // ignore errors on write

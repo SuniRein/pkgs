@@ -4,8 +4,8 @@ use crate::config::{Package, PackageType};
 
 #[derive(Debug)]
 pub struct NamedPackage {
-    name: String,
-    package: Package,
+    pub name: String,
+    pub package: Package,
 }
 
 impl NamedPackage {

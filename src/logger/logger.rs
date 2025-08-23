@@ -42,4 +42,11 @@ impl<O: LoggerOutput> Logger<O> {
             dst: dst.as_ref().into(),
         });
     }
+
+    pub fn remove_symlink(&mut self, src: impl AsRef<Path>, dst: impl AsRef<Path>) {
+        self.log(LogMessage::RemoveSymlink {
+            src: src.as_ref().into(),
+            dst: dst.as_ref().into(),
+        });
+    }
 }

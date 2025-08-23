@@ -6,4 +6,5 @@ pub enum LogMessage {
     CreateDir(PathBuf),
     CreateFile(PathBuf),
     CreateSymlink { src: PathBuf, dst: PathBuf },
+    RemoveSymlink { src: PathBuf, dst: PathBuf },
 }

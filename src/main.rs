@@ -1,22 +1,17 @@
 use std::fs;
 use std::path::Path;
-use std::process;
 
+use anyhow::{Result, bail};
 use clap::Parser;
 
-use pkgs::cli::Cli;
+use pkgs::cli::{Cli, Command};
 use pkgs::config::Config;
-use pkgs::core::NamedPackage;
-use pkgs::core::load;
+use pkgs::core::{self, NamedPackage};
 use pkgs::logger::{Logger, WriterOutput};
 use pkgs::meta::{PKGS_DIR, TOML_CONFIG_FILE, TRACE_FILE};
 use pkgs::trace::Trace;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let _cli = Cli::parse();
-
-    let config = Config::read(Path::new(TOML_CONFIG_FILE))?;
-
+fn load(config: &Config, modules: Vec<String>) -> Result<()> {
     let pkgs_dir = Path::new(PKGS_DIR);
     if !pkgs_dir.exists() {
         fs::create_dir_all(pkgs_dir)?;
@@ -34,18 +29,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let root = std::env::current_dir()?;
 
-    for (name, package) in config.packages {
+    for name in modules {
         let pkg_trace = trace.packages.get(&name);
-        let named_package = NamedPackage::new(&name, package);
+        let package = &config.packages[&name];
+        let named_package = NamedPackage::new(&name, package.clone());
 
-        match load(&root, &named_package, pkg_trace, &mut logger) {
+        match core::load(&root, &named_package, pkg_trace, &mut logger) {
             Ok(pkg_trace) => {
                 println!("Loaded package: {name}");
                 trace.packages.insert(name.clone(), pkg_trace);
             }
             Err(err) => {
-                eprintln!("Error loading package '{name}': {err}");
-                process::exit(1);
+                bail!("Error loading package '{name}': {err}");
             }
         }
     }
@@ -53,4 +48,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     trace.write_to_file(&trace_file)?;
 
     Ok(())
+}
+
+fn main() -> Result<()> {
+    let cli = Cli::parse();
+
+    let config = Config::read(Path::new(TOML_CONFIG_FILE))?;
+    let available = config.packages.keys();
+
+    match &cli.command {
+        Command::Load { modules } => load(&config, modules.get(available)?),
+    }
 }

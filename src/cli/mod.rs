@@ -1,8 +1,25 @@
-use clap::Parser;
+mod error;
+mod modules;
 
-#[derive(Parser)]
+use clap::{Parser, Subcommand};
+
+use modules::Modules;
+
+#[derive(Debug, Parser)]
 #[command(version, about, long_about = None)]
-pub struct Cli {}
+pub struct Cli {
+    #[command(subcommand)]
+    pub command: Command,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum Command {
+    Load {
+        /// the modules to load
+        #[command(flatten)]
+        modules: Modules,
+    },
+}
 
 #[cfg(test)]
 mod tests {

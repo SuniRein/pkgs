@@ -474,5 +474,25 @@ mod tests {
 
             Ok(())
         }
+
+        #[gtest]
+        fn dst_in_trace_but_not_exists() -> Result<()> {
+            let (td, pkg, trace) = setup()?;
+            fs::remove_file(td.join(DST_FILE_PATH))?;
+
+            let mut logger = null_logger();
+            let new_trace = load(td.path(), &pkg, Some(&trace), &mut logger)?;
+
+            expect_eq!(new_trace, trace);
+            expect_that!(
+                logger.messages(),
+                superset_of([&LogMessage::CreateSymlink {
+                    src: td.join(SRC_FILE_PATH),
+                    dst: td.join(DST_FILE_PATH)
+                }])
+            );
+
+            Ok(())
+        }
     }
 }

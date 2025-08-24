@@ -131,6 +131,13 @@ fn load_with_trace<O: LoggerOutput>(
             });
         }
 
+        if let Some(parent) = dst_path.parent()
+            && !parent.exists()
+        {
+            fs::create_dir_all(parent)?;
+            logger.create_dir(parent);
+        }
+
         create_symlink(&src_path, dst)?;
         logger.create_symlink(&src_path, dst);
 
@@ -367,10 +374,10 @@ mod tests {
         fn add_new() -> Result<()> {
             let (td, mut pkg, trace) = setup()?;
             let td = td.file("test_package/new_src_file", "")?;
-            pkg.package.maps.insert(
-                "new_src_file".into(),
-                td.join("new_dest_file").to_string_lossy().into(),
-            );
+            let new_dst_path = td.join("nonexistent_parent/new_dest_file");
+            pkg.package
+                .maps
+                .insert("new_src_file".into(), new_dst_path.to_string_lossy().into());
 
             let mut logger = null_logger();
             let new_trace = load(td.path(), &pkg, Some(&trace), &mut logger)?;
@@ -381,14 +388,14 @@ mod tests {
             expect_eq!(new_trace.maps["src_file"], trace.maps["src_file"]);
             expect_eq!(
                 new_trace.maps["new_src_file"],
-                td.join("new_dest_file").to_str().unwrap()
+                new_dst_path.to_str().unwrap(),
             );
 
             expect_that!(
                 logger.messages(),
                 superset_of([&LogMessage::CreateSymlink {
                     src: td.join("test_package/new_src_file"),
-                    dst: td.join("new_dest_file")
+                    dst: new_dst_path
                 },])
             );
 

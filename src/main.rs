@@ -2,6 +2,9 @@ use std::fs;
 use std::path::Path;
 use std::process;
 
+use clap::Parser;
+
+use pkgs::cli::Cli;
 use pkgs::config::Config;
 use pkgs::core::NamedPackage;
 use pkgs::core::load;
@@ -10,6 +13,8 @@ use pkgs::meta::{PKGS_DIR, TOML_CONFIG_FILE, TRACE_FILE};
 use pkgs::trace::Trace;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let _cli = Cli::parse();
+
     let config = Config::read(Path::new(TOML_CONFIG_FILE))?;
 
     let pkgs_dir = Path::new(PKGS_DIR);

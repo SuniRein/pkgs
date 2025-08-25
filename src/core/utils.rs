@@ -9,7 +9,7 @@ pub fn create_symlink<S: AsRef<Path>, D: AsRef<Path>>(src: S, dst: D) -> io::Res
         ))?
     }
 
-    let src = src.as_ref().canonicalize()?;
+    let src = src.as_ref().canonicalize().unwrap();
 
     #[cfg(unix)]
     {

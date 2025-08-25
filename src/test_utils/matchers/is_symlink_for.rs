@@ -53,7 +53,7 @@ where
 
         let link = actual.read_link().unwrap();
         if link == self.src {
-            "which is a symlink pointing to the correct path".into()
+            "which is a symlink pointing to the targeted path".into()
         } else {
             format!(
                 "which is a symlink but points to a different path '{}'",
@@ -85,6 +85,31 @@ mod tests {
         create_symlink(&src, &dst)?;
 
         verify_that!(dst, is_symlink_for(src))
+    }
+
+    #[gtest]
+    fn negative() -> Result<()> {
+        let td = tempfile::tempdir()?;
+
+        let src = td.path().join("src");
+        fs::create_dir(&src)?;
+
+        let dst = td.path().join("dst");
+        create_symlink(&src, &dst)?;
+
+        let result = verify_that!(dst, not(is_symlink_for(&src)));
+        verify_that!(
+            result,
+            err(displays_as(contains_substring(formatdoc! {r#"
+                Value of: dst
+                Expected: isn't symlink for '{}'
+                Actual: "{}",
+                  which is a symlink pointing to the targeted path
+            "#,
+                src.to_string_lossy(),
+                dst.to_string_lossy(),
+            })))
+        )
     }
 
     #[gtest]

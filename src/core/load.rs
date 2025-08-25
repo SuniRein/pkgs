@@ -427,6 +427,20 @@ mod tests {
         }
 
         #[gtest]
+        fn remove_old_but_dst_not_a_symlink() -> Result<()> {
+            let (td, mut pkg, trace) = setup()?;
+            pkg.package.maps.remove("src_file");
+
+            fs::remove_file(td.join(DST_FILE_PATH))?;
+            fs::write(td.join(DST_FILE_PATH), "")?;
+
+            let err = load(td.path(), &pkg, Some(&trace), &mut null_logger()).unwrap_err();
+            expect_that!(err, pat!(LoadError::DstNotSymlink(&td.join(DST_FILE_PATH))));
+
+            Ok(())
+        }
+
+        #[gtest]
         fn src_not_exists() -> Result<()> {
             let (td, pkg, trace) = setup()?;
             fs::remove_file(td.join(SRC_FILE_PATH))?;

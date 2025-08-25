@@ -33,6 +33,7 @@ impl Trace {
         Ok(())
     }
 }
+
 #[cfg(test)]
 mod tests {
     use std::collections::BTreeMap;

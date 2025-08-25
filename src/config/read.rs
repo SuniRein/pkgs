@@ -133,5 +133,15 @@ mod tests {
             let err = Config::read(file.path()).unwrap_err();
             expect_that!(err, pat!(ConfigError::UnsupportedFileFormat(_)));
         }
+
+        #[gtest]
+        fn invalid_path() {
+            let file = NamedTempFile::new().unwrap();
+            let path = file.path().to_path_buf();
+            drop(file);
+
+            let err = Config::read(&path).unwrap_err();
+            expect_that!(err, pat!(ConfigError::Io(_)));
+        }
     }
 }

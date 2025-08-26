@@ -1,4 +1,6 @@
 mod load;
+mod unload;
+
 mod named_package;
 pub mod utils;
 
@@ -11,4 +13,6 @@ pub enum CoreError {
 }
 
 pub use load::load;
+pub use unload::unload;
+
 pub use named_package::NamedPackage;

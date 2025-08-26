@@ -31,6 +31,7 @@ impl<W: Write> LoggerOutput for WriterOutput<W> {
     fn log(&mut self, message: &LogMessage) {
         let message = match message {
             LogMessage::LoadModule(module) => format!("Load Module {module}"),
+            LogMessage::UnloadModule(module) => format!("Unload Module {module}"),
             LogMessage::CreateDir(path) => format!("Create Directory {}", path.to_string_lossy()),
             LogMessage::CreateFile(path) => format!("Create File {}", path.to_string_lossy()),
             LogMessage::CreateSymlink { src, dst } => format!(

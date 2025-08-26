@@ -11,6 +11,18 @@ use pkgs::logger::{Logger, WriterOutput};
 use pkgs::meta::{PKGS_DIR, TOML_CONFIG_FILE, TRACE_FILE};
 use pkgs::trace::Trace;
 
+fn main() -> Result<()> {
+    let cli = Cli::parse();
+
+    let config = Config::read(Path::new(TOML_CONFIG_FILE))?;
+    let available = config.packages.keys();
+
+    match &cli.command {
+        Command::Load { modules } => load(&config, modules.get(available)?),
+        Command::Unload { modules } => unload(modules.get(available)?),
+    }
+}
+
 fn load(config: &Config, modules: Vec<String>) -> Result<()> {
     let pkgs_dir = Path::new(PKGS_DIR);
     if !pkgs_dir.exists() {
@@ -50,13 +62,42 @@ fn load(config: &Config, modules: Vec<String>) -> Result<()> {
     Ok(())
 }
 
-fn main() -> Result<()> {
-    let cli = Cli::parse();
-
-    let config = Config::read(Path::new(TOML_CONFIG_FILE))?;
-    let available = config.packages.keys();
-
-    match &cli.command {
-        Command::Load { modules } => load(&config, modules.get(available)?),
+fn unload(modules: Vec<String>) -> Result<()> {
+    let pkgs_dir = Path::new(PKGS_DIR);
+    if !pkgs_dir.exists() {
+        bail!("Packages directory '{PKGS_DIR}' does not exist");
     }
+
+    let trace_file = pkgs_dir.join(TRACE_FILE);
+    let mut trace = if trace_file.exists() {
+        Trace::read_from_file(&trace_file)?
+    } else {
+        Trace::default()
+    };
+
+    let stdout = WriterOutput::new(std::io::stdout());
+    let mut logger = Logger::new(stdout);
+
+    let root = std::env::current_dir()?;
+
+    for name in modules {
+        let Some(pkg_trace) = trace.packages.get(&name) else {
+            eprintln!("Warning! Package '{name}' is not loaded.");
+            continue;
+        };
+
+        match core::unload(&root, &name, pkg_trace, &mut logger) {
+            Ok(()) => {
+                println!("Unloaded package: {name}");
+                trace.packages.remove(&name);
+            }
+            Err(err) => {
+                bail!("Error unloading package '{name}': {err}");
+            }
+        }
+    }
+
+    trace.write_to_file(&trace_file)?;
+
+    Ok(())
 }

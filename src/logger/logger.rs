@@ -28,6 +28,10 @@ impl<O: LoggerOutput> Logger<O> {
         self.log(LogMessage::LoadModule(module.as_ref().into()));
     }
 
+    pub fn unload_module(&mut self, module: impl AsRef<str>) {
+        self.log(LogMessage::UnloadModule(module.as_ref().into()));
+    }
+
     pub fn create_dir(&mut self, path: impl AsRef<Path>) {
         self.log(LogMessage::CreateDir(path.as_ref().into()));
     }

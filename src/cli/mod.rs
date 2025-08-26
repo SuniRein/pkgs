@@ -19,6 +19,12 @@ pub enum Command {
         #[command(flatten)]
         modules: Modules,
     },
+
+    Unload {
+        /// the modules to unload
+        #[command(flatten)]
+        modules: Modules,
+    },
 }
 
 #[cfg(test)]

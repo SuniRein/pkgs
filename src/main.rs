@@ -1,4 +1,5 @@
 use std::fs;
+use std::io::Stdout;
 use std::path::Path;
 
 use anyhow::{Result, bail};
@@ -8,19 +9,24 @@ use pkgs::cli::{Cli, Command};
 use pkgs::config::Config;
 use pkgs::core::{self, NamedPackage};
 use pkgs::logger::WriterOutput;
-use pkgs::meta::{PKGS_DIR, TOML_CONFIG_FILE, TRACE_FILE};
-use pkgs::runner::Runner;
+use pkgs::meta::{PKGS_DIR, TRACE_FILE};
 use pkgs::trace::Trace;
+
+type Runner = pkgs::runner::Runner<WriterOutput<Stdout>>;
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
 
-    let config = Config::read(Path::new(TOML_CONFIG_FILE))?;
+    let cwd = std::env::current_dir()?;
+    let stdout = WriterOutput::new(std::io::stdout());
+    let runner = Runner::new(&cwd, stdout);
+
+    let config = runner.read_config()?;
     let available = config.packages.keys();
 
     match &cli.command {
-        Command::Load { modules } => load(&config, modules.get(available)?),
-        Command::Unload { modules } => unload(modules.get(available)?),
+        Command::Load { modules } => load(&config, modules.get(available)?, runner),
+        Command::Unload { modules } => unload(modules.get(available)?, runner),
         Command::List => {
             println!(
                 "{}",
@@ -31,7 +37,7 @@ fn main() -> Result<()> {
     }
 }
 
-fn load(config: &Config, modules: Vec<String>) -> Result<()> {
+fn load(config: &Config, modules: Vec<String>, mut runner: Runner) -> Result<()> {
     let pkgs_dir = Path::new(PKGS_DIR);
     if !pkgs_dir.exists() {
         fs::create_dir_all(pkgs_dir)?;
@@ -43,9 +49,6 @@ fn load(config: &Config, modules: Vec<String>) -> Result<()> {
     } else {
         Trace::default()
     };
-
-    let stdout = WriterOutput::new(std::io::stdout());
-    let mut runner = Runner::new(stdout);
 
     let root = std::env::current_dir()?;
 
@@ -72,7 +75,7 @@ fn load(config: &Config, modules: Vec<String>) -> Result<()> {
     Ok(())
 }
 
-fn unload(modules: Vec<String>) -> Result<()> {
+fn unload(modules: Vec<String>, mut runner: Runner) -> Result<()> {
     let pkgs_dir = Path::new(PKGS_DIR);
     if !pkgs_dir.exists() {
         bail!("Packages directory '{PKGS_DIR}' does not exist");
@@ -84,9 +87,6 @@ fn unload(modules: Vec<String>) -> Result<()> {
     } else {
         Trace::default()
     };
-
-    let stdout = WriterOutput::new(std::io::stdout());
-    let mut runner = Runner::new(stdout);
 
     let root = std::env::current_dir()?;
 

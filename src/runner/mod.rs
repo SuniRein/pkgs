@@ -1,16 +1,23 @@
+mod error;
+mod rw;
+
+pub use error::RunnerError;
+
 use std::fs;
 use std::io;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use crate::logger::{LogMessage, Logger, LoggerOutput};
 
 pub struct Runner<O: LoggerOutput> {
+    cwd: PathBuf,
     logger: Logger<O>,
 }
 
 impl<O: LoggerOutput> Runner<O> {
-    pub fn new(output: O) -> Self {
+    pub fn new(cwd: &Path, output: O) -> Self {
         Self {
+            cwd: cwd.to_path_buf(),
             logger: Logger::new(output),
         }
     }

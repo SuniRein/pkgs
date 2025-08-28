@@ -4,6 +4,8 @@ use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
 
+pub use read::ConfigError;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     pub packages: BTreeMap<String, Package>,

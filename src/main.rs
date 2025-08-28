@@ -1,6 +1,4 @@
-use std::fs;
 use std::io::Stdout;
-use std::path::Path;
 
 use anyhow::{Result, bail};
 use clap::Parser;
@@ -9,7 +7,7 @@ use pkgs::cli::{Cli, Command};
 use pkgs::config::Config;
 use pkgs::core::{self, NamedPackage};
 use pkgs::logger::WriterOutput;
-use pkgs::meta::{PKGS_DIR, TRACE_FILE};
+use pkgs::meta::TRACE_FILE;
 use pkgs::trace::Trace;
 
 type Runner = pkgs::runner::Runner<WriterOutput<Stdout>>;
@@ -38,10 +36,7 @@ fn main() -> Result<()> {
 }
 
 fn load(config: &Config, modules: Vec<String>, mut runner: Runner) -> Result<()> {
-    let pkgs_dir = Path::new(PKGS_DIR);
-    if !pkgs_dir.exists() {
-        fs::create_dir_all(pkgs_dir)?;
-    }
+    let pkgs_dir = runner.create_pkgs_dir()?;
 
     let trace_file = pkgs_dir.join(TRACE_FILE);
     let mut trace = if trace_file.exists() {
@@ -76,10 +71,7 @@ fn load(config: &Config, modules: Vec<String>, mut runner: Runner) -> Result<()>
 }
 
 fn unload(modules: Vec<String>, mut runner: Runner) -> Result<()> {
-    let pkgs_dir = Path::new(PKGS_DIR);
-    if !pkgs_dir.exists() {
-        bail!("Packages directory '{PKGS_DIR}' does not exist");
-    }
+    let pkgs_dir = runner.get_pkgs_dir()?;
 
     let trace_file = pkgs_dir.join(TRACE_FILE);
     let mut trace = if trace_file.exists() {

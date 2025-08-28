@@ -1,3 +1,5 @@
+use std::io;
+
 use thiserror::Error;
 
 use crate::config::ConfigError;
@@ -9,4 +11,16 @@ pub enum RunnerError {
 
     #[error(transparent)]
     ConfigReadError(#[from] ConfigError),
+
+    #[error("'.pkgs' directory already exists but is not a directory.")]
+    PkgsDirNotADir,
+
+    #[error("Package directory '.pkgs' not found.")]
+    PkgsDirNotFound,
+
+    #[error("Io error while {action}: {source}")]
+    Io {
+        source: io::Error,
+        action: &'static str,
+    },
 }

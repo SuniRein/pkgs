@@ -14,12 +14,14 @@ pub struct Cli {
 
 #[derive(Debug, Subcommand)]
 pub enum Command {
+    /// Load modules
     Load {
         /// the modules to load
         #[command(flatten)]
         modules: Modules,
     },
 
+    /// Unload modules
     Unload {
         /// the modules to unload
         #[command(flatten)]

@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 use crate::config::{Package, PackageType};
 
@@ -30,7 +30,7 @@ impl NamedPackage {
         self.package.kind
     }
 
-    pub fn maps(&self) -> &HashMap<String, String> {
+    pub fn maps(&self) -> &BTreeMap<String, String> {
         &self.package.maps
     }
 }

@@ -161,7 +161,6 @@ fn load_with_pkg_dir_changed<O: LoggerOutput>(
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
     use std::fs;
 
     use googletest::prelude::*;
@@ -183,7 +182,7 @@ mod tests {
 
         let package = Package {
             kind: PackageType::Local,
-            maps: HashMap::from([
+            maps: BTreeMap::from([
                 ("src_file".into(), dst_file_path),
                 ("src_dir".into(), dst_dir_path),
             ]),

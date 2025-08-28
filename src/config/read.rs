@@ -36,7 +36,7 @@ impl Config {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
+    use std::collections::BTreeMap;
 
     use googletest::prelude::*;
     use indoc::indoc;
@@ -59,8 +59,8 @@ mod tests {
         [packages."empty maps"]
     "#};
 
-    fn expect_map(map: &HashMap<String, String>, key: &str, value: &str) {
-        expect_that!(map, has_entry(key.to_string(), eq(&value.to_string())));
+    fn expect_map(map: &BTreeMap<String, String>, key: &str, value: &str) {
+        expect_that!(map.get(key), some(eq(value)));
     }
 
     mod toml_parse {

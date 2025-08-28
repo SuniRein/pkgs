@@ -49,7 +49,7 @@ pub fn unload<O: LoggerOutput>(
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
+    use std::collections::BTreeMap;
     use std::fs;
 
     use googletest::prelude::*;
@@ -78,7 +78,7 @@ mod tests {
             "test_package",
             Package {
                 kind: PackageType::Local,
-                maps: HashMap::from([
+                maps: BTreeMap::from([
                     ("src_file".into(), dst_file_path),
                     ("src_dir".into(), dst_dir_path),
                 ]),

@@ -21,6 +21,13 @@ fn main() -> Result<()> {
     match &cli.command {
         Command::Load { modules } => load(&config, modules.get(available)?),
         Command::Unload { modules } => unload(modules.get(available)?),
+        Command::List => {
+            println!(
+                "{}",
+                available.into_iter().cloned().collect::<Vec<_>>().join(" ")
+            );
+            Ok(())
+        }
     }
 }
 

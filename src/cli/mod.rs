@@ -27,6 +27,9 @@ pub enum Command {
         #[command(flatten)]
         modules: Modules,
     },
+
+    /// List available modules
+    List,
 }
 
 #[cfg(test)]

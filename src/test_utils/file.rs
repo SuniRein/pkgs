@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 
 use googletest::Result;
 
-use crate::core::utils::create_symlink;
+use crate::fs::create_symlink;
 
 pub struct TempDir(pub tempfile::TempDir);
 

@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use thiserror::Error;
 
 use super::NamedPackage;
-use super::utils::create_symlink;
+use crate::fs::create_symlink;
 use crate::logger::{Logger, LoggerOutput};
 use crate::trace::PkgTrace;
 

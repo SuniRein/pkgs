@@ -72,7 +72,7 @@ mod tests {
     use indoc::formatdoc;
 
     use super::*;
-    use crate::core::utils::create_symlink;
+    use crate::fs::create_symlink;
 
     #[gtest]
     fn it_works() -> Result<()> {

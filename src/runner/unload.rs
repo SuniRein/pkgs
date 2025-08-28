@@ -48,8 +48,7 @@ mod tests {
     use googletest::prelude::*;
 
     use super::*;
-    use crate::config::{Package, PackageType};
-    use crate::core::NamedPackage;
+    use crate::config::{NamedPackage, Package, PackageType};
     use crate::logger::{LogMessage, NullOutput};
     use crate::test_utils::{TempDir, common_runner};
 

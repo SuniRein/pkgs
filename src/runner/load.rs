@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use super::{LoadError, Runner, RunnerError};
-use crate::core::NamedPackage;
+use crate::config::NamedPackage;
 use crate::logger::LoggerOutput;
 use crate::trace::PkgTrace;
 

@@ -5,7 +5,6 @@ use clap::Parser;
 
 use pkgs::cli::{Cli, Command};
 use pkgs::config::Config;
-use pkgs::core::NamedPackage;
 use pkgs::logger::WriterOutput;
 use pkgs::meta::TRACE_FILE;
 use pkgs::trace::Trace;
@@ -47,10 +46,9 @@ fn load(config: &Config, modules: Vec<String>, mut runner: Runner) -> Result<()>
 
     for name in modules {
         let pkg_trace = trace.packages.get(&name);
-        let package = &config.packages[&name];
-        let named_package = NamedPackage::new(&name, package.clone());
+        let package = config.get(&name);
 
-        let pkg_trace = runner.load_module(&named_package, pkg_trace)?;
+        let pkg_trace = runner.load_module(&package, pkg_trace)?;
         println!("Loaded package: {name}");
         trace.packages.insert(name.clone(), pkg_trace);
     }

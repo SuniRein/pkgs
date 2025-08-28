@@ -56,9 +56,9 @@ mod tests {
 
     use super::*;
     use crate::config::{Package, PackageType};
-    use crate::core::{NamedPackage, load};
+    use crate::core::NamedPackage;
     use crate::logger::LogMessage;
-    use crate::test_utils::{TempDir, null_runner};
+    use crate::test_utils::{TempDir, common_runner, null_runner};
 
     const SRC_FILE_PATH: &str = "test_package/src_file";
     const SRC_DIR_PATH: &str = "test_package/src_dir";
@@ -85,7 +85,8 @@ mod tests {
             },
         );
 
-        let trace = load(td.path(), &pkg, None, &mut null_runner())?;
+        let mut runner = common_runner(td.path());
+        let trace = runner.load_module(&pkg, None)?;
         Ok((td, trace))
     }
 

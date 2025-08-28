@@ -15,6 +15,15 @@ pub struct PkgTrace {
     pub maps: BTreeMap<String, String>,
 }
 
+impl PkgTrace {
+    pub fn new(directory: String) -> Self {
+        Self {
+            directory,
+            maps: BTreeMap::new(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 struct TraceMap {
     pub src: String,
@@ -51,7 +60,7 @@ mod trace_map_as_map {
 
 #[cfg(test)]
 mod tests {
-    use serde_test::{assert_tokens, Token};
+    use serde_test::{Token, assert_tokens};
 
     use super::*;
 

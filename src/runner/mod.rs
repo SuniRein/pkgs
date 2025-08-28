@@ -1,7 +1,8 @@
 mod error;
+mod load;
 mod rw;
 
-pub use error::RunnerError;
+pub use error::{LoadError, RunnerError};
 
 use std::fs;
 use std::io;
@@ -24,10 +25,6 @@ impl<O: LoggerOutput> Runner<O> {
 
     pub fn messages(&self) -> &[LogMessage] {
         self.logger.messages()
-    }
-
-    pub fn load_module(&mut self, module: impl AsRef<str>) {
-        self.logger.load_module(module);
     }
 
     pub fn unload_module(&mut self, module: impl AsRef<str>) {

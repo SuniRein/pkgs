@@ -45,24 +45,14 @@ fn load(config: &Config, modules: Vec<String>, mut runner: Runner) -> Result<()>
         Trace::default()
     };
 
-    let root = std::env::current_dir()?;
-
     for name in modules {
         let pkg_trace = trace.packages.get(&name);
         let package = &config.packages[&name];
         let named_package = NamedPackage::new(&name, package.clone());
 
-        runner.load_module(&name);
-
-        match core::load(&root, &named_package, pkg_trace, &mut runner) {
-            Ok(pkg_trace) => {
-                println!("Loaded package: {name}");
-                trace.packages.insert(name.clone(), pkg_trace);
-            }
-            Err(err) => {
-                bail!("Error loading package '{name}': {err}");
-            }
-        }
+        let pkg_trace = runner.load_module(&named_package, pkg_trace)?;
+        println!("Loaded package: {name}");
+        trace.packages.insert(name.clone(), pkg_trace);
     }
 
     trace.write_to_file(&trace_file)?;

@@ -84,7 +84,10 @@ impl<O: LoggerOutput> Runner<O> {
                 let dst_in_trace = PathBuf::from(dst_in_trace);
                 if dst_in_trace.exists() {
                     if !dst_in_trace.is_symlink() {
-                        return Err(LoadError::DstNotSymlink(dst_in_trace));
+                        return Err(LoadError::DstNotSymlink {
+                            src: src.clone(),
+                            dst: dst_in_trace,
+                        });
                     }
 
                     if dst_path == dst_in_trace {
@@ -119,7 +122,10 @@ impl<O: LoggerOutput> Runner<O> {
 
             if dst_path.exists() && !trace.maps.contains_key(src) {
                 if !dst_path.is_symlink() {
-                    return Err(LoadError::DstNotSymlink(dst_path));
+                    return Err(LoadError::DstNotSymlink {
+                        src: src.clone(),
+                        dst: dst_path,
+                    });
                 }
                 self.remove_symlink(pkg_dir.join(src), dst)?;
             }
@@ -408,7 +414,13 @@ mod tests {
                 .load_module(&pkg, Some(&trace))
                 .unwrap_err()
                 .unwrap_load();
-            expect_that!(err, pat!(LoadError::DstNotSymlink(&td.join(DST_FILE_PATH))));
+            expect_that!(
+                err,
+                pat!(LoadError::DstNotSymlink {
+                    src: "src_file",
+                    dst: &td.join(DST_FILE_PATH)
+                })
+            );
 
             Ok(())
         }
@@ -466,7 +478,13 @@ mod tests {
                 .load_module(&pkg, Some(&trace))
                 .unwrap_err()
                 .unwrap_load();
-            expect_that!(err, pat!(LoadError::DstNotSymlink(&td.join(DST_FILE_PATH))));
+            expect_that!(
+                err,
+                pat!(LoadError::DstNotSymlink {
+                    src: "src_file",
+                    dst: &td.join(DST_FILE_PATH)
+                })
+            );
 
             Ok(())
         }

@@ -1,11 +1,11 @@
 use std::io::Stdout;
 
-use anyhow::{Result, bail};
+use anyhow::Result;
 use clap::Parser;
 
 use pkgs::cli::{Cli, Command};
 use pkgs::config::Config;
-use pkgs::core::{self, NamedPackage};
+use pkgs::core::NamedPackage;
 use pkgs::logger::WriterOutput;
 use pkgs::meta::TRACE_FILE;
 use pkgs::trace::Trace;
@@ -70,25 +70,15 @@ fn unload(modules: Vec<String>, mut runner: Runner) -> Result<()> {
         Trace::default()
     };
 
-    let root = std::env::current_dir()?;
-
     for name in modules {
         let Some(pkg_trace) = trace.packages.get(&name) else {
             eprintln!("Warning! Package '{name}' is not loaded.");
             continue;
         };
 
-        runner.unload_module(&name);
-
-        match core::unload(&root, pkg_trace, &mut runner) {
-            Ok(()) => {
-                println!("Unloaded package: {name}");
-                trace.packages.remove(&name);
-            }
-            Err(err) => {
-                bail!("Error unloading package '{name}': {err}");
-            }
-        }
+        runner.unload_module(&name, pkg_trace)?;
+        println!("Unloaded package: {name}");
+        trace.packages.remove(&name);
     }
 
     trace.write_to_file(&trace_file)?;

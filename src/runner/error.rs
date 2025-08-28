@@ -27,6 +27,9 @@ pub enum RunnerError {
 
     #[error("Fail to load {module}: {source}")]
     LoadModuleError { source: LoadError, module: String },
+
+    #[error("Fail to unload {module}: {source}")]
+    UnloadModuleError { source: UnloadError, module: String },
 }
 
 #[derive(Debug, Error)]
@@ -40,8 +43,20 @@ pub enum LoadError {
     #[error("'{dst}' for '{src}' already exists")]
     DstAlreadyExists { src: String, dst: PathBuf },
 
-    #[error("destination '{0}' found in trace file but not a symlink")]
-    DstNotSymlink(PathBuf),
+    #[error("'{dst}' for '{src}' found in trace file but not a symlink")]
+    DstNotSymlink { src: String, dst: PathBuf },
+}
+
+#[derive(Debug, Error)]
+pub enum UnloadError {
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+
+    #[error("'{dst}' for '{src}' does not exist")]
+    DstNotFound { src: String, dst: PathBuf },
+
+    #[error("'{dst}' for '{src}' found in trace file but not a symlink")]
+    DstNotSymlink { src: String, dst: PathBuf },
 }
 
 impl RunnerError {
@@ -49,6 +64,13 @@ impl RunnerError {
         match self {
             RunnerError::LoadModuleError { source, .. } => source,
             _ => panic!("Called unwrap_load on a non-LoadModuleError variant"),
+        }
+    }
+
+    pub fn unwrap_unload(self) -> UnloadError {
+        match self {
+            RunnerError::UnloadModuleError { source, .. } => source,
+            _ => panic!("Called unwrap_unload on a non-UnloadModuleError variant"),
         }
     }
 }

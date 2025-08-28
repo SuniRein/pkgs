@@ -1,8 +1,10 @@
 mod error;
-mod load;
 mod rw;
 
-pub use error::{LoadError, RunnerError};
+mod load;
+mod unload;
+
+pub use error::{LoadError, RunnerError, UnloadError};
 
 use std::fs;
 use std::io;
@@ -25,10 +27,6 @@ impl<O: LoggerOutput> Runner<O> {
 
     pub fn messages(&self) -> &[LogMessage] {
         self.logger.messages()
-    }
-
-    pub fn unload_module(&mut self, module: impl AsRef<str>) {
-        self.logger.unload_module(module);
     }
 
     pub fn create_dir(&mut self, path: impl AsRef<Path>) -> io::Result<()> {

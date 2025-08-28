@@ -7,8 +7,9 @@ use clap::Parser;
 use pkgs::cli::{Cli, Command};
 use pkgs::config::Config;
 use pkgs::core::{self, NamedPackage};
-use pkgs::logger::{Logger, WriterOutput};
+use pkgs::logger::WriterOutput;
 use pkgs::meta::{PKGS_DIR, TOML_CONFIG_FILE, TRACE_FILE};
+use pkgs::runner::Runner;
 use pkgs::trace::Trace;
 
 fn main() -> Result<()> {
@@ -37,7 +38,7 @@ fn load(config: &Config, modules: Vec<String>) -> Result<()> {
     };
 
     let stdout = WriterOutput::new(std::io::stdout());
-    let mut logger = Logger::new(stdout);
+    let mut runner = Runner::new(stdout);
 
     let root = std::env::current_dir()?;
 
@@ -46,7 +47,9 @@ fn load(config: &Config, modules: Vec<String>) -> Result<()> {
         let package = &config.packages[&name];
         let named_package = NamedPackage::new(&name, package.clone());
 
-        match core::load(&root, &named_package, pkg_trace, &mut logger) {
+        runner.load_module(&name);
+
+        match core::load(&root, &named_package, pkg_trace, &mut runner) {
             Ok(pkg_trace) => {
                 println!("Loaded package: {name}");
                 trace.packages.insert(name.clone(), pkg_trace);
@@ -76,7 +79,7 @@ fn unload(modules: Vec<String>) -> Result<()> {
     };
 
     let stdout = WriterOutput::new(std::io::stdout());
-    let mut logger = Logger::new(stdout);
+    let mut runner = Runner::new(stdout);
 
     let root = std::env::current_dir()?;
 
@@ -86,7 +89,9 @@ fn unload(modules: Vec<String>) -> Result<()> {
             continue;
         };
 
-        match core::unload(&root, &name, pkg_trace, &mut logger) {
+        runner.unload_module(&name);
+
+        match core::unload(&root, pkg_trace, &mut runner) {
             Ok(()) => {
                 println!("Unloaded package: {name}");
                 trace.packages.remove(&name);

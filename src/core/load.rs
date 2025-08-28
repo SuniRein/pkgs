@@ -1,12 +1,11 @@
 use std::collections::BTreeMap;
-use std::fs;
 use std::path::{Path, PathBuf};
 
 use thiserror::Error;
 
 use super::NamedPackage;
-use crate::fs::create_symlink;
-use crate::logger::{Logger, LoggerOutput};
+use crate::logger::LoggerOutput;
+use crate::runner::Runner;
 use crate::trace::PkgTrace;
 
 #[derive(Debug, Error)]
@@ -28,21 +27,19 @@ pub fn load<O: LoggerOutput>(
     root: &Path,
     package: &NamedPackage,
     trace: Option<&PkgTrace>,
-    logger: &mut Logger<O>,
+    runner: &mut Runner<O>,
 ) -> Result<PkgTrace, LoadError> {
-    logger.load_module(package.name());
-
     if let Some(trace) = trace {
-        load_with_trace(root, package, trace, logger)
+        load_with_trace(root, package, trace, runner)
     } else {
-        load_directly(root, package, logger)
+        load_directly(root, package, runner)
     }
 }
 
 fn load_directly<O: LoggerOutput>(
     root: &Path,
     package: &NamedPackage,
-    logger: &mut Logger<O>,
+    runner: &mut Runner<O>,
 ) -> Result<PkgTrace, LoadError> {
     let mut trace = PkgTrace {
         directory: package.get_directory(),
@@ -68,12 +65,10 @@ fn load_directly<O: LoggerOutput>(
         if let Some(parent) = dst_path.parent()
             && !parent.exists()
         {
-            fs::create_dir_all(parent)?;
-            logger.create_dir(parent);
+            runner.create_dir(parent)?;
         }
 
-        create_symlink(&src_path, dst)?;
-        logger.create_symlink(&src_path, &dst_path);
+        runner.create_symlink(&src_path, &dst_path)?;
 
         trace.maps.insert(src.into(), dst.into());
     }
@@ -85,11 +80,11 @@ fn load_with_trace<O: LoggerOutput>(
     root: &Path,
     package: &NamedPackage,
     old_trace: &PkgTrace,
-    logger: &mut Logger<O>,
+    runner: &mut Runner<O>,
 ) -> Result<PkgTrace, LoadError> {
     let directory = package.get_directory();
     if directory != old_trace.directory {
-        return load_with_pkg_dir_changed(root, package, old_trace, logger);
+        return load_with_pkg_dir_changed(root, package, old_trace, runner);
     }
 
     let mut trace = PkgTrace {
@@ -119,8 +114,7 @@ fn load_with_trace<O: LoggerOutput>(
                     continue;
                 }
 
-                fs::remove_file(&dst_in_trace)?;
-                logger.remove_symlink(&src_path, dst_in_trace);
+                runner.remove_symlink(&src_path, dst_in_trace)?;
             }
         }
 
@@ -134,12 +128,10 @@ fn load_with_trace<O: LoggerOutput>(
         if let Some(parent) = dst_path.parent()
             && !parent.exists()
         {
-            fs::create_dir_all(parent)?;
-            logger.create_dir(parent);
+            runner.create_dir(parent)?;
         }
 
-        create_symlink(&src_path, dst)?;
-        logger.create_symlink(&src_path, dst);
+        runner.create_symlink(&src_path, dst)?;
 
         trace.maps.insert(src.into(), dst.into());
     }
@@ -151,8 +143,7 @@ fn load_with_trace<O: LoggerOutput>(
             if !dst_path.is_symlink() {
                 return Err(LoadError::DstNotSymlink(dst_path));
             }
-            fs::remove_file(dst)?;
-            logger.remove_symlink(pkg_dir.join(src), dst);
+            runner.remove_symlink(pkg_dir.join(src), dst)?;
         }
     }
 
@@ -163,7 +154,7 @@ fn load_with_pkg_dir_changed<O: LoggerOutput>(
     _root: &Path,
     _package: &NamedPackage,
     _old_trace: &PkgTrace,
-    _logger: &mut Logger<O>,
+    _runner: &mut Runner<O>,
 ) -> Result<PkgTrace, LoadError> {
     todo!()
 }
@@ -171,13 +162,14 @@ fn load_with_pkg_dir_changed<O: LoggerOutput>(
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
+    use std::fs;
 
     use googletest::prelude::*;
 
     use super::*;
     use crate::config::{Package, PackageType};
-    use crate::logger::{LogMessage, null_logger};
-    use crate::test_utils::{TempDir, matchers::is_symlink_for};
+    use crate::logger::LogMessage;
+    use crate::test_utils::{TempDir, matchers::is_symlink_for, null_runner};
 
     const SRC_FILE_PATH: &str = "test_package/src_file";
     const SRC_DIR_PATH: &str = "test_package/src_dir";
@@ -206,6 +198,7 @@ mod tests {
     }
 
     mod load_without_trace {
+
         use super::*;
 
         #[gtest]
@@ -213,7 +206,7 @@ mod tests {
             let td = setup_dir()?;
             let pkg = setup_pkg(&td);
 
-            let trace = load(td.path(), &pkg, None, &mut null_logger())?;
+            let trace = load(td.path(), &pkg, None, &mut null_runner())?;
 
             let dst_file = td.join(DST_FILE_PATH);
             let dst_dir = td.join(DST_DIR_PATH);
@@ -245,15 +238,14 @@ mod tests {
         }
 
         #[gtest]
-        fn logger_output() -> Result<()> {
+        fn runner_output() -> Result<()> {
             let td = setup_dir()?;
             let pkg = setup_pkg(&td);
-            let mut logger = null_logger();
-            load(td.path(), &pkg, None, &mut logger)?;
+            let mut runner = null_runner();
+            load(td.path(), &pkg, None, &mut runner)?;
 
-            let messages = logger.messages();
-            expect_eq!(messages.len(), 5);
-            expect_eq!(messages[0], LogMessage::LoadModule("test_package".into()));
+            let messages = runner.messages();
+            expect_eq!(messages.len(), 4);
             expect_that!(
                 messages,
                 superset_of([
@@ -284,7 +276,7 @@ mod tests {
             let pkg = setup_pkg(&td);
             fs::remove_file(td.join(SRC_FILE_PATH))?;
 
-            let result = load(td.path(), &pkg, None, &mut null_logger()).unwrap_err();
+            let result = load(td.path(), &pkg, None, &mut null_runner()).unwrap_err();
             expect_that!(result, pat!(LoadError::SrcNotExists("src_file")));
 
             Ok(())
@@ -296,7 +288,7 @@ mod tests {
             let pkg = setup_pkg(&td);
             fs::create_dir_all(td.join(DST_FILE_PATH))?;
 
-            let result = load(td.path(), &pkg, None, &mut null_logger()).unwrap_err();
+            let result = load(td.path(), &pkg, None, &mut null_runner()).unwrap_err();
             expect_that!(
                 result,
                 pat!(LoadError::DstAlreadyExists {
@@ -315,21 +307,18 @@ mod tests {
         fn setup() -> Result<(TempDir, NamedPackage, PkgTrace)> {
             let td = setup_dir()?;
             let pkg = setup_pkg(&td);
-            let trace = load(td.path(), &pkg, None, &mut null_logger())?;
+            let trace = load(td.path(), &pkg, None, &mut null_runner())?;
             Ok((td, pkg, trace))
         }
 
         #[gtest]
         fn no_changed() -> Result<()> {
             let (td, pkg, trace) = setup()?;
-            let mut logger = null_logger();
-            let new_trace = load(td.path(), &pkg, Some(&trace), &mut logger)?;
+            let mut runner = null_runner();
+            let new_trace = load(td.path(), &pkg, Some(&trace), &mut runner)?;
 
             expect_eq!(new_trace, trace);
-            expect_eq!(
-                logger.messages(),
-                &[LogMessage::LoadModule("test_package".to_string())]
-            );
+            expect_eq!(runner.messages().len(), 0);
 
             Ok(())
         }
@@ -342,8 +331,8 @@ mod tests {
                 td.join("new_dest_file").to_string_lossy().into(),
             );
 
-            let mut logger = null_logger();
-            let new_trace = load(td.path(), &pkg, Some(&trace), &mut logger)?;
+            let mut runner = null_runner();
+            let new_trace = load(td.path(), &pkg, Some(&trace), &mut runner)?;
 
             expect_eq!(new_trace.directory, trace.directory);
             expect_eq!(new_trace.maps.len(), trace.maps.len());
@@ -354,7 +343,7 @@ mod tests {
             );
 
             expect_that!(
-                logger.messages(),
+                runner.messages(),
                 superset_of([
                     &LogMessage::RemoveSymlink {
                         src: td.join(SRC_FILE_PATH).canonicalize()?,
@@ -379,8 +368,8 @@ mod tests {
                 .maps
                 .insert("new_src_file".into(), new_dst_path.to_string_lossy().into());
 
-            let mut logger = null_logger();
-            let new_trace = load(td.path(), &pkg, Some(&trace), &mut logger)?;
+            let mut runner = null_runner();
+            let new_trace = load(td.path(), &pkg, Some(&trace), &mut runner)?;
 
             expect_eq!(new_trace.directory, trace.directory);
             expect_eq!(new_trace.maps.len(), trace.maps.len() + 1);
@@ -392,7 +381,7 @@ mod tests {
             );
 
             expect_that!(
-                logger.messages(),
+                runner.messages(),
                 superset_of([&LogMessage::CreateSymlink {
                     src: td.join("test_package/new_src_file"),
                     dst: new_dst_path
@@ -407,8 +396,8 @@ mod tests {
             let (td, mut pkg, trace) = setup()?;
             pkg.package.maps.remove("src_file");
 
-            let mut logger = null_logger();
-            let new_trace = load(td.path(), &pkg, Some(&trace), &mut logger)?;
+            let mut runner = null_runner();
+            let new_trace = load(td.path(), &pkg, Some(&trace), &mut runner)?;
 
             expect_eq!(new_trace.directory, trace.directory);
             expect_eq!(new_trace.maps.len(), trace.maps.len() - 1);
@@ -416,7 +405,7 @@ mod tests {
             expect_eq!(new_trace.maps.get("src_file"), None);
 
             expect_that!(
-                logger.messages(),
+                runner.messages(),
                 superset_of([&LogMessage::RemoveSymlink {
                     src: td.join(SRC_FILE_PATH),
                     dst: td.join(DST_FILE_PATH)
@@ -434,7 +423,7 @@ mod tests {
             fs::remove_file(td.join(DST_FILE_PATH))?;
             fs::write(td.join(DST_FILE_PATH), "")?;
 
-            let err = load(td.path(), &pkg, Some(&trace), &mut null_logger()).unwrap_err();
+            let err = load(td.path(), &pkg, Some(&trace), &mut null_runner()).unwrap_err();
             expect_that!(err, pat!(LoadError::DstNotSymlink(&td.join(DST_FILE_PATH))));
 
             Ok(())
@@ -445,7 +434,7 @@ mod tests {
             let (td, pkg, trace) = setup()?;
             fs::remove_file(td.join(SRC_FILE_PATH))?;
 
-            let result = load(td.path(), &pkg, Some(&trace), &mut null_logger()).unwrap_err();
+            let result = load(td.path(), &pkg, Some(&trace), &mut null_runner()).unwrap_err();
             expect_that!(result, pat!(LoadError::SrcNotExists("src_file")));
 
             Ok(())
@@ -462,7 +451,7 @@ mod tests {
                 td.join("new_dest_file").to_string_lossy().into(),
             );
 
-            let result = load(td.path(), &pkg, Some(&trace), &mut null_logger()).unwrap_err();
+            let result = load(td.path(), &pkg, Some(&trace), &mut null_runner()).unwrap_err();
             expect_that!(
                 result,
                 pat!(LoadError::DstAlreadyExists {
@@ -480,7 +469,7 @@ mod tests {
             fs::remove_file(td.join(DST_FILE_PATH))?;
             fs::write(td.join(DST_FILE_PATH), "")?;
 
-            let result = load(td.path(), &pkg, Some(&trace), &mut null_logger()).unwrap_err();
+            let result = load(td.path(), &pkg, Some(&trace), &mut null_runner()).unwrap_err();
             expect_that!(
                 result,
                 pat!(LoadError::DstNotSymlink(&td.join(DST_FILE_PATH)))
@@ -494,12 +483,12 @@ mod tests {
             let (td, pkg, trace) = setup()?;
             fs::remove_file(td.join(DST_FILE_PATH))?;
 
-            let mut logger = null_logger();
-            let new_trace = load(td.path(), &pkg, Some(&trace), &mut logger)?;
+            let mut runner = null_runner();
+            let new_trace = load(td.path(), &pkg, Some(&trace), &mut runner)?;
 
             expect_eq!(new_trace, trace);
             expect_that!(
-                logger.messages(),
+                runner.messages(),
                 superset_of([&LogMessage::CreateSymlink {
                     src: td.join(SRC_FILE_PATH),
                     dst: td.join(DST_FILE_PATH)

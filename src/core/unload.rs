@@ -1,9 +1,9 @@
-use std::fs;
 use std::path::{Path, PathBuf};
 
 use thiserror::Error;
 
-use crate::logger::{Logger, LoggerOutput};
+use crate::logger::LoggerOutput;
+use crate::runner::Runner;
 use crate::trace::PkgTrace;
 
 #[derive(Debug, Error)]
@@ -20,12 +20,9 @@ pub enum UnloadError {
 
 pub fn unload<O: LoggerOutput>(
     root: &Path,
-    name: &str,
     trace: &PkgTrace,
-    logger: &mut Logger<O>,
+    runner: &mut Runner<O>,
 ) -> Result<(), UnloadError> {
-    logger.unload_module(name);
-
     let pkg_dir = root.join(&trace.directory);
 
     for (src, dst) in &trace.maps {
@@ -43,9 +40,8 @@ pub fn unload<O: LoggerOutput>(
             });
         }
 
-        fs::remove_file(&dst_path)?;
         let src_path = pkg_dir.join(src);
-        logger.remove_symlink(src_path, dst_path);
+        runner.remove_symlink(src_path, dst_path)?;
     }
 
     Ok(())
@@ -54,14 +50,15 @@ pub fn unload<O: LoggerOutput>(
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
+    use std::fs;
 
     use googletest::prelude::*;
 
     use super::*;
     use crate::config::{Package, PackageType};
     use crate::core::{NamedPackage, load};
-    use crate::logger::{LogMessage, null_logger};
-    use crate::test_utils::TempDir;
+    use crate::logger::LogMessage;
+    use crate::test_utils::{TempDir, null_runner};
 
     const SRC_FILE_PATH: &str = "test_package/src_file";
     const SRC_DIR_PATH: &str = "test_package/src_dir";
@@ -88,22 +85,21 @@ mod tests {
             },
         );
 
-        let trace = load(td.path(), &pkg, None, &mut null_logger())?;
+        let trace = load(td.path(), &pkg, None, &mut null_runner())?;
         Ok((td, trace))
     }
 
     #[gtest]
     fn it_works() -> Result<()> {
         let (td, trace) = setup()?;
-        let mut logger = null_logger();
-        unload(td.path(), "test_package", &trace, &mut logger)?;
+        let mut runner = null_runner();
+        unload(td.path(), &trace, &mut runner)?;
 
         expect_pred!(!td.join(DST_FILE_PATH).exists());
         expect_pred!(!td.join(DST_DIR_PATH).exists());
 
-        let messages = logger.messages();
-        expect_eq!(messages.len(), 3);
-        expect_that!(messages[0], pat!(LogMessage::UnloadModule("test_package")));
+        let messages = runner.messages();
+        expect_eq!(messages.len(), 2);
         expect_that!(
             messages,
             contains(pat!(LogMessage::RemoveSymlink {
@@ -127,7 +123,7 @@ mod tests {
         let (td, trace) = setup()?;
         fs::remove_file(td.join(DST_FILE_PATH))?;
 
-        let err = unload(td.path(), "test_package", &trace, &mut null_logger()).unwrap_err();
+        let err = unload(td.path(), &trace, &mut null_runner()).unwrap_err();
         expect_that!(
             err,
             pat!(UnloadError::DstNotFound {
@@ -145,7 +141,7 @@ mod tests {
         fs::remove_file(td.join(DST_FILE_PATH))?;
         fs::write(td.join(DST_FILE_PATH), "not_a_symlink")?;
 
-        let err = unload(td.path(), "test_package", &trace, &mut null_logger()).unwrap_err();
+        let err = unload(td.path(), &trace, &mut null_runner()).unwrap_err();
         expect_that!(
             err,
             pat!(UnloadError::DstNotSymlink {

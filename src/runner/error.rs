@@ -19,11 +19,8 @@ pub enum RunnerError {
     #[error("Package directory '.pkgs' not found.")]
     PkgsDirNotFound,
 
-    #[error("Io error while {action}: {source}")]
-    Io {
-        source: io::Error,
-        action: &'static str,
-    },
+    #[error(transparent)]
+    Io(#[from] IoError),
 
     #[error("Fail to load {module}: {source}")]
     LoadModuleError { source: LoadError, module: String },
@@ -33,9 +30,19 @@ pub enum RunnerError {
 }
 
 #[derive(Debug, Error)]
+#[error("Io error while {action}: {source}")]
+pub struct IoError {
+    pub source: io::Error,
+    pub action: String,
+}
+
+#[derive(Debug, Error)]
 pub enum LoadError {
     #[error(transparent)]
-    Io(#[from] io::Error),
+    Io(#[from] IoError),
+
+    #[error("package directory for '{0}' not found")]
+    PkgDirNotFound(String),
 
     #[error("source '{0}' does not exist")]
     SrcNotExists(String),
@@ -50,7 +57,7 @@ pub enum LoadError {
 #[derive(Debug, Error)]
 pub enum UnloadError {
     #[error(transparent)]
-    Io(#[from] std::io::Error),
+    Io(#[from] IoError),
 
     #[error("'{dst}' for '{src}' does not exist")]
     DstNotFound { src: String, dst: PathBuf },

@@ -19,10 +19,7 @@ impl<O: LoggerOutput> Runner<O> {
     pub fn create_pkgs_dir(&mut self) -> Result<PathBuf, RunnerError> {
         let pkgs_dir = self.cwd.join(PKGS_DIR).to_path_buf();
         if !pkgs_dir.exists() {
-            self.create_dir(&pkgs_dir).map_err(|e| RunnerError::Io {
-                source: e,
-                action: "create '.pkgs' dir",
-            })?;
+            self.create_dir(&pkgs_dir)?;
             return Ok(pkgs_dir);
         }
         if !pkgs_dir.is_dir() {

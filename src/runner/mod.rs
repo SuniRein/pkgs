@@ -4,10 +4,9 @@ mod rw;
 mod load;
 mod unload;
 
-pub use error::{LoadError, RunnerError, UnloadError};
+pub use error::{IoError, LoadError, RunnerError, UnloadError};
 
 use std::fs;
-use std::io;
 use std::path::{Path, PathBuf};
 
 use crate::logger::{LogMessage, Logger, LoggerOutput};
@@ -19,6 +18,10 @@ pub struct Runner<O: LoggerOutput> {
 
 impl<O: LoggerOutput> Runner<O> {
     pub fn new(cwd: &Path, output: O) -> Self {
+        if !cwd.is_absolute() {
+            panic!("cwd must be an absolute path");
+        }
+
         Self {
             cwd: cwd.to_path_buf(),
             logger: Logger::new(output),
@@ -29,8 +32,19 @@ impl<O: LoggerOutput> Runner<O> {
         self.logger.messages()
     }
 
-    pub fn create_dir(&mut self, path: impl AsRef<Path>) -> io::Result<()> {
-        fs::create_dir_all(&path)?;
+    pub fn absolute_path_from(&self, path: impl AsRef<Path>) -> PathBuf {
+        if path.as_ref().is_absolute() {
+            path.as_ref().to_path_buf()
+        } else {
+            self.cwd.join(path)
+        }
+    }
+
+    pub fn create_dir(&mut self, path: impl AsRef<Path>) -> Result<(), IoError> {
+        fs::create_dir_all(&path).map_err(|source| IoError {
+            source,
+            action: format!("create dir '{}'", path.as_ref().display()),
+        })?;
         self.logger.create_dir(path);
         Ok(())
     }
@@ -39,8 +53,15 @@ impl<O: LoggerOutput> Runner<O> {
         &mut self,
         src: impl AsRef<Path>,
         dst: impl AsRef<Path>,
-    ) -> io::Result<()> {
-        crate::fs::create_symlink(&src, &dst)?;
+    ) -> Result<(), IoError> {
+        crate::fs::create_symlink(&src, &dst).map_err(|source| IoError {
+            source,
+            action: format!(
+                "create symlink '{}' for '{}'",
+                dst.as_ref().display(),
+                src.as_ref().display()
+            ),
+        })?;
         self.logger.create_symlink(src, dst);
         Ok(())
     }
@@ -49,8 +70,15 @@ impl<O: LoggerOutput> Runner<O> {
         &mut self,
         src: impl AsRef<Path>,
         dst: impl AsRef<Path>,
-    ) -> io::Result<()> {
-        fs::remove_file(&dst)?;
+    ) -> Result<(), IoError> {
+        fs::remove_file(&dst).map_err(|source| IoError {
+            source,
+            action: format!(
+                "remove symlink '{}' for '{}'",
+                dst.as_ref().display(),
+                src.as_ref().display()
+            ),
+        })?;
         self.logger.remove_symlink(src, dst);
         Ok(())
     }

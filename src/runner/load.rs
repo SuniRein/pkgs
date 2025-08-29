@@ -28,7 +28,10 @@ impl<O: LoggerOutput> Runner<O> {
     fn load_directly(&mut self, package: &NamedPackage) -> Result<PkgTrace, LoadError> {
         let mut trace = PkgTrace::new(package.get_directory());
 
-        let pkg_dir = self.cwd.join(&trace.directory).canonicalize()?;
+        let pkg_dir = self.absolute_path_from(&trace.directory);
+        if !pkg_dir.exists() {
+            return Err(LoadError::PkgDirNotFound(package.name.clone()));
+        }
 
         for (src, dst) in package.maps() {
             let src_path = pkg_dir.join(src);
@@ -70,7 +73,10 @@ impl<O: LoggerOutput> Runner<O> {
 
         let mut trace = PkgTrace::new(directory);
 
-        let pkg_dir = self.cwd.join(&trace.directory).canonicalize()?;
+        let pkg_dir = self.absolute_path_from(&trace.directory);
+        if !pkg_dir.exists() {
+            return Err(LoadError::PkgDirNotFound(package.name.clone()));
+        }
 
         for (src, dst) in package.maps() {
             let src_path = pkg_dir.join(src);
@@ -256,6 +262,17 @@ mod tests {
         }
 
         #[gtest]
+        fn no_pkg_dir() -> Result<()> {
+            let (td, pkg, mut runner) = setup()?;
+            fs::remove_dir_all(td.join("test_package"))?;
+
+            let result = runner.load_module(&pkg, None).unwrap_err().unwrap_load();
+            expect_that!(result, pat!(LoadError::PkgDirNotFound("test_package")));
+
+            Ok(())
+        }
+
+        #[gtest]
         fn src_not_exists() -> Result<()> {
             let (td, pkg, mut runner) = setup()?;
             fs::remove_file(td.join(SRC_FILE_PATH))?;
@@ -291,6 +308,21 @@ mod tests {
             let (td, pkg, mut runner) = super::setup()?;
             let trace = runner.load_module(&pkg, None)?;
             Ok((td, pkg, trace))
+        }
+
+        #[gtest]
+        fn no_pkg_dir() -> Result<()> {
+            let (td, pkg, trace) = setup()?;
+            let mut runner = common_runner(td.path());
+            fs::remove_dir_all(td.join("test_package"))?;
+
+            let result = runner
+                .load_module(&pkg, Some(&trace))
+                .unwrap_err()
+                .unwrap_load();
+            expect_that!(result, pat!(LoadError::PkgDirNotFound("test_package")));
+
+            Ok(())
         }
 
         #[gtest]

@@ -5,8 +5,12 @@ pub enum LogMessage {
     LoadModule(String),
     UnloadModule(String),
 
+    RollbackLoadModule(String),
+    RollbackUnloadModule(String),
+
     CreateDir(PathBuf),
-    CreateFile(PathBuf),
     CreateSymlink { src: PathBuf, dst: PathBuf },
+
+    RemoveDir(PathBuf),
     RemoveSymlink { src: PathBuf, dst: PathBuf },
 }

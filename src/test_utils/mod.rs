@@ -22,7 +22,7 @@ pub mod prelude {
     pub use super::matchers::*;
     pub use super::package::*;
 
-    pub use crate::config::{NamedPackage, PackageType};
+    pub use crate::config::PackageType;
     pub use crate::logger::{LogMessage, NullOutput};
     pub use crate::runner::{LoadError, RunnerError, UnloadError};
     pub use crate::trace::PkgTrace;

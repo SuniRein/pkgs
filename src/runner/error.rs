@@ -27,6 +27,9 @@ pub enum RunnerError {
 
     #[error("Fail to unload {module}: {source}")]
     UnloadModuleError { source: UnloadError, module: String },
+
+    #[error("No action to rollback")]
+    NoActionToRollback,
 }
 
 #[derive(Debug, Error)]

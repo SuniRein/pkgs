@@ -32,13 +32,15 @@ impl<W: Write> LoggerOutput for WriterOutput<W> {
         let message = match message {
             LogMessage::LoadModule(module) => format!("Load Module {module}"),
             LogMessage::UnloadModule(module) => format!("Unload Module {module}"),
+            LogMessage::RollbackLoadModule(module) => format!("Rollback Load Module {module}"),
+            LogMessage::RollbackUnloadModule(module) => format!("Rollback Unload Module {module}"),
             LogMessage::CreateDir(path) => format!("Create Directory {}", path.to_string_lossy()),
-            LogMessage::CreateFile(path) => format!("Create File {}", path.to_string_lossy()),
             LogMessage::CreateSymlink { src, dst } => format!(
                 "Create Symlink {} -> {}",
                 dst.to_string_lossy(),
                 src.to_string_lossy()
             ),
+            LogMessage::RemoveDir(path) => format!("Remove Directory {}", path.to_string_lossy()),
             LogMessage::RemoveSymlink { src, dst } => format!(
                 "Remove Symlink {} -> {}",
                 dst.to_string_lossy(),

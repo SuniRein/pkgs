@@ -32,12 +32,16 @@ impl<O: LoggerOutput> Logger<O> {
         self.log(LogMessage::UnloadModule(module.as_ref().into()));
     }
 
-    pub fn create_dir(&mut self, path: impl AsRef<Path>) {
-        self.log(LogMessage::CreateDir(path.as_ref().into()));
+    pub fn rollback_load_module(&mut self, module: impl AsRef<str>) {
+        self.log(LogMessage::RollbackLoadModule(module.as_ref().into()));
     }
 
-    pub fn create_file(&mut self, path: impl AsRef<Path>) {
-        self.log(LogMessage::CreateFile(path.as_ref().into()));
+    pub fn rollback_unload_module(&mut self, module: impl AsRef<str>) {
+        self.log(LogMessage::RollbackUnloadModule(module.as_ref().into()));
+    }
+
+    pub fn create_dir(&mut self, path: impl AsRef<Path>) {
+        self.log(LogMessage::CreateDir(path.as_ref().into()));
     }
 
     pub fn create_symlink(&mut self, src: impl AsRef<Path>, dst: impl AsRef<Path>) {
@@ -45,6 +49,10 @@ impl<O: LoggerOutput> Logger<O> {
             src: src.as_ref().into(),
             dst: dst.as_ref().into(),
         });
+    }
+
+    pub fn remove_dir(&mut self, path: impl AsRef<Path>) {
+        self.log(LogMessage::RemoveDir(path.as_ref().into()));
     }
 
     pub fn remove_symlink(&mut self, src: impl AsRef<Path>, dst: impl AsRef<Path>) {

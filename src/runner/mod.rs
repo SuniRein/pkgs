@@ -2,6 +2,7 @@ mod error;
 mod rw;
 
 mod load;
+mod rollback;
 mod unload;
 
 pub use error::{IoError, LoadError, RunnerError, UnloadError};
@@ -63,6 +64,15 @@ impl<O: LoggerOutput> Runner<O> {
             ),
         })?;
         self.logger.create_symlink(src, dst);
+        Ok(())
+    }
+
+    pub fn remove_dir(&mut self, path: impl AsRef<Path>) -> Result<(), IoError> {
+        fs::remove_dir(&path).map_err(|source| IoError {
+            source,
+            action: format!("remove dir '{}'", path.as_ref().display()),
+        })?;
+        self.logger.remove_dir(path);
         Ok(())
     }
 

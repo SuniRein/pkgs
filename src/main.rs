@@ -48,9 +48,16 @@ fn load(config: &Config, modules: Vec<String>, mut runner: Runner) -> Result<()>
         let pkg_trace = trace.packages.get(&name);
         let package = config.get(&name);
 
-        let pkg_trace = runner.load_module(&package, pkg_trace)?;
-        println!("Loaded package: {name}");
-        trace.packages.insert(name.clone(), pkg_trace);
+        match runner.load_module(&package, pkg_trace) {
+            Ok(pkg_trace) => {
+                println!("Loaded package: {name}");
+                trace.packages.insert(name.clone(), pkg_trace);
+            }
+            Err(e) => {
+                eprintln!("{e}");
+                runner.rollback()?;
+            }
+        }
     }
 
     trace.write_to_file(&trace_file)?;
@@ -74,9 +81,16 @@ fn unload(modules: Vec<String>, mut runner: Runner) -> Result<()> {
             continue;
         };
 
-        runner.unload_module(&name, pkg_trace)?;
-        println!("Unloaded package: {name}");
-        trace.packages.remove(&name);
+        match runner.unload_module(&name, pkg_trace) {
+            Ok(()) => {
+                println!("Unloaded package: {name}");
+                trace.packages.remove(&name);
+            }
+            Err(e) => {
+                eprintln!("{e}");
+                runner.rollback()?;
+            }
+        }
     }
 
     trace.write_to_file(&trace_file)?;

@@ -42,9 +42,9 @@ impl Modules {
 #[cfg(test)]
 mod tests {
     use clap::{Parser, error::ErrorKind};
-    use googletest::prelude::*;
 
     use super::*;
+    use crate::test_utils::prelude::*;
 
     #[derive(Debug, Parser)]
     struct TestCli {

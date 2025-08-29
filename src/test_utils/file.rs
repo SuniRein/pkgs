@@ -38,10 +38,8 @@ impl TempDir {
 
 #[cfg(test)]
 mod tests {
-    use googletest::prelude::*;
-
     use super::*;
-    use crate::test_utils::matchers::is_symlink_for;
+    use crate::test_utils::prelude::*;
 
     #[gtest]
     fn it_works() -> Result<()> {

@@ -42,45 +42,15 @@ impl<O: LoggerOutput> Runner<O> {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::BTreeMap;
     use std::fs;
 
-    use googletest::prelude::*;
-
     use super::*;
-    use crate::config::{NamedPackage, Package, PackageType};
-    use crate::logger::{LogMessage, NullOutput};
-    use crate::test_utils::{TempDir, common_runner};
-
-    const SRC_FILE_PATH: &str = "test_package/src_file";
-    const SRC_DIR_PATH: &str = "test_package/src_dir";
-
-    const DST_FILE_PATH: &str = "./test_pkg/dst_file";
-    const DST_DIR_PATH: &str = "./test_a/test_b/dst_dir";
+    use crate::test_utils::prelude::*;
 
     fn setup() -> Result<(TempDir, PkgTrace, Runner<NullOutput>)> {
-        let td = TempDir::new()?
-            .dir(SRC_DIR_PATH)?
-            .file(SRC_FILE_PATH, "test_content")?;
-
-        let dst_file_path = td.join(DST_FILE_PATH).to_str().unwrap().to_string();
-        let dst_dir_path = td.join(DST_DIR_PATH).to_str().unwrap().to_string();
-
-        let pkg = NamedPackage::new(
-            "test_package",
-            Package {
-                kind: PackageType::Local,
-                maps: BTreeMap::from([
-                    ("src_file".into(), dst_file_path),
-                    ("src_dir".into(), dst_dir_path),
-                ]),
-            },
-        );
-
-        let trace = (common_runner(td.path())).load_module(&pkg, None)?;
-
+        let (td, pkg, mut runner) = common_local_pkg()?;
+        let trace = runner.load_module(&pkg, None)?;
         let runner = common_runner(td.path());
-
         Ok((td, trace, runner))
     }
 

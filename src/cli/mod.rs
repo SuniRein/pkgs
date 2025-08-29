@@ -34,9 +34,8 @@ pub enum Command {
 
 #[cfg(test)]
 mod tests {
-    use googletest::prelude::*;
-
     use super::*;
+    use crate::test_utils::prelude::*;
 
     #[gtest]
     fn verify_cli() {

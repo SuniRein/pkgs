@@ -36,13 +36,10 @@ impl Config {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::BTreeMap;
-
-    use googletest::prelude::*;
     use indoc::indoc;
 
     use super::*;
-    use crate::config::PackageType;
+    use crate::test_utils::prelude::*;
 
     const TOML_CONTENT: &str = indoc! {r#"
         [packages.yazi]

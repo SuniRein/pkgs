@@ -56,11 +56,9 @@ impl<W: Write> LoggerOutput for WriterOutput<W> {
 #[cfg(test)]
 mod tests {
     use std::io::Cursor;
-    use std::path::PathBuf;
-
-    use googletest::prelude::*;
 
     use super::*;
+    use crate::test_utils::prelude::*;
 
     #[gtest]
     fn writer_output() -> Result<()> {

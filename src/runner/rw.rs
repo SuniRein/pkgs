@@ -42,12 +42,10 @@ impl<O: LoggerOutput> Runner<O> {
 
 #[cfg(test)]
 mod tests {
-    use googletest::prelude::*;
     use indoc::indoc;
 
     use super::*;
-    use crate::logger::LogMessage;
-    use crate::test_utils::{TempDir, common_runner};
+    use crate::test_utils::prelude::*;
 
     mod read_config {
         use super::*;

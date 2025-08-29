@@ -34,18 +34,16 @@ mod tests {
     use std::fs::{self, File};
     use std::io::{self, Write};
 
-    use googletest::prelude::*;
-    use tempfile::tempdir;
-
     use super::*;
+    use crate::test_utils::prelude::*;
 
     #[gtest]
     fn create_symlink_file_unix() -> Result<()> {
-        let td = tempdir().unwrap();
-        let src = td.path().join("src_file");
+        let td = TempDir::new()?;
+        let src = td.join("src_file");
         let mut f = File::create(&src)?;
         writeln!(f, "hello")?;
-        let dst = td.path().join("dst_file_link");
+        let dst = td.join("dst_file_link");
 
         create_symlink(&src, &dst)?;
         expect_true!(dst.exists());
@@ -58,10 +56,10 @@ mod tests {
 
     #[gtest]
     fn create_symlink_dir_unix() -> Result<()> {
-        let td = tempdir()?;
-        let src = td.path().join("src_dir");
+        let td = TempDir::new()?;
+        let src = td.join("src_dir");
         fs::create_dir(&src)?;
-        let dst = td.path().join("dst_dir_link");
+        let dst = td.join("dst_dir_link");
 
         create_symlink(&src, &dst)?;
         expect_true!(dst.exists());
@@ -74,9 +72,9 @@ mod tests {
 
     #[gtest]
     fn create_symlink_nonexistent_src_unix() -> Result<()> {
-        let td = tempdir()?;
-        let src = td.path().join("no_such_src");
-        let dst = td.path().join("dst_nonexistent_link");
+        let td = TempDir::new()?;
+        let src = td.join("no_such_src");
+        let dst = td.join("dst_nonexistent_link");
 
         let result = create_symlink(&src, &dst).unwrap_err();
         expect_eq!(result.kind(), io::ErrorKind::NotFound);

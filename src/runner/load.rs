@@ -11,7 +11,7 @@ impl<O: LoggerOutput> Runner<O> {
         package: &NamedPackage,
         trace: Option<&PkgTrace>,
     ) -> Result<PkgTrace, RunnerError> {
-        self.logger.load_module(&package.name);
+        self.logger.load_module(package.name());
 
         let result = if let Some(trace) = trace {
             self.load_with_trace(package, trace)
@@ -21,7 +21,7 @@ impl<O: LoggerOutput> Runner<O> {
 
         result.map_err(|e| RunnerError::LoadModuleError {
             source: e,
-            module: package.name.clone(),
+            module: package.name().to_string(),
         })
     }
 
@@ -30,7 +30,7 @@ impl<O: LoggerOutput> Runner<O> {
 
         let pkg_dir = self.absolute_path_from(&trace.directory);
         if !pkg_dir.exists() {
-            return Err(LoadError::PkgDirNotFound(package.name.clone()));
+            return Err(LoadError::PkgDirNotFound(package.name().to_string()));
         }
 
         for (src, dst) in package.maps() {
@@ -75,7 +75,7 @@ impl<O: LoggerOutput> Runner<O> {
 
         let pkg_dir = self.absolute_path_from(&trace.directory);
         if !pkg_dir.exists() {
-            return Err(LoadError::PkgDirNotFound(package.name.clone()));
+            return Err(LoadError::PkgDirNotFound(package.name().to_string()));
         }
 
         for (src, dst) in package.maps() {
@@ -309,10 +309,7 @@ mod tests {
         #[gtest]
         fn just_update() -> Result<()> {
             let (td, mut pkg, trace) = setup()?;
-            pkg.package.maps.insert(
-                "src_file".into(),
-                td.join("new_dest_file").to_string_lossy().into(),
-            );
+            pkg.insert_map("src_file", td.join("new_dest_file").to_string_lossy());
 
             let mut runner = common_runner(td.path());
             let new_trace = runner.load_module(&pkg, Some(&trace))?;
@@ -347,9 +344,7 @@ mod tests {
             let (td, mut pkg, trace) = setup()?;
             let td = td.file("test_package/new_src_file", "")?;
             let new_dst_path = td.join("nonexistent_parent/new_dest_file");
-            pkg.package
-                .maps
-                .insert("new_src_file".into(), new_dst_path.to_string_lossy().into());
+            pkg.insert_map("new_src_file", new_dst_path.to_string_lossy());
 
             let mut runner = common_runner(td.path());
             let new_trace = runner.load_module(&pkg, Some(&trace))?;
@@ -377,7 +372,7 @@ mod tests {
         #[gtest]
         fn remove_old() -> Result<()> {
             let (td, mut pkg, trace) = setup()?;
-            pkg.package.maps.remove("src_file");
+            pkg.remove_map("src_file");
 
             let mut runner = common_runner(td.path());
             let new_trace = runner.load_module(&pkg, Some(&trace))?;
@@ -401,7 +396,7 @@ mod tests {
         #[gtest]
         fn remove_old_but_dst_not_a_symlink() -> Result<()> {
             let (td, mut pkg, trace) = setup()?;
-            pkg.package.maps.remove("src_file");
+            pkg.remove_map("src_file");
 
             fs::remove_file(td.join(DST_FILE_PATH))?;
             fs::write(td.join(DST_FILE_PATH), "")?;
@@ -443,10 +438,7 @@ mod tests {
             let td = td
                 .file("test_package/new_src_file", "")?
                 .file("new_dest_file", "")?;
-            pkg.package.maps.insert(
-                "new_src_file".into(),
-                td.join("new_dest_file").to_string_lossy().into(),
-            );
+            pkg.insert_map("new_src_file", td.join("new_dest_file").to_string_lossy());
 
             let mut runner = common_runner(td.path());
             let err = runner

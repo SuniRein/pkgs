@@ -167,10 +167,7 @@ mod tests {
 
             let new_src_file = "test_package/new_src_file";
             let td = td.file(new_src_file, "")?;
-            pkg.package.maps.insert(
-                String::from("new_src_file"),
-                td.join("new_dst_file").to_string_lossy().into(),
-            );
+            pkg.insert_map("new_src_file", td.join("new_dst_file").to_string_lossy());
 
             let mut runner = common_runner(td.path());
             runner.load_module(&pkg, Some(&trace))?;

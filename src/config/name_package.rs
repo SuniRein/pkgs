@@ -4,8 +4,8 @@ use crate::config::{Package, PackageType};
 
 #[derive(Debug)]
 pub struct NamedPackage {
-    pub name: String,
-    pub package: Package,
+    name: String,
+    package: Package,
 }
 
 impl NamedPackage {
@@ -32,5 +32,17 @@ impl NamedPackage {
 
     pub fn maps(&self) -> &BTreeMap<String, String> {
         &self.package.maps
+    }
+
+    #[cfg(test)]
+    pub fn insert_map(&mut self, key: impl AsRef<str>, value: impl AsRef<str>) {
+        self.package
+            .maps
+            .insert(key.as_ref().to_string(), value.as_ref().to_string());
+    }
+
+    #[cfg(test)]
+    pub fn remove_map(&mut self, key: impl AsRef<str>) {
+        self.package.maps.remove(key.as_ref());
     }
 }

@@ -1,26 +1,26 @@
+mod error;
 mod name_package;
 mod read;
+mod var;
 
 use std::collections::BTreeMap;
 
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
+use tuple_vec_map;
 
-pub use read::ConfigError;
-
+pub use error::{PkgsParseError, VarsBuildError, VarsParseError};
 pub use name_package::NamedPackage;
+pub use read::ConfigError;
+pub use var::VarMap;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Config {
+    #[serde(default, with = "tuple_vec_map")]
+    pub vars: Vec<(String, String)>,
     pub packages: BTreeMap<String, Package>,
 }
 
-impl Config {
-    pub fn get(&self, name: &str) -> NamedPackage {
-        NamedPackage::new(name, self.packages[name].clone())
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Package {
     #[serde(default)]
     pub kind: PackageType,
@@ -29,7 +29,7 @@ pub struct Package {
     pub maps: BTreeMap<String, String>,
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Deserialize, Default, PartialEq, Eq)]
 #[serde(rename_all = "kebab-case")]
 pub enum PackageType {
     #[default]

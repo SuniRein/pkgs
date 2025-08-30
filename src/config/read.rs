@@ -42,6 +42,11 @@ mod tests {
     use crate::test_utils::prelude::*;
 
     const TOML_CONTENT: &str = indoc! {r#"
+        [vars]
+        CONFIG_DIR = "${HOME}/.config"
+        DESKTOP_DIR = "${HOME}/.local/share/applications"
+        NU_AUTOLOAD = "${HOME}/.config/nu/autoload"
+
         [packages.yazi]
         type = "local"
 
@@ -66,6 +71,19 @@ mod tests {
         #[gtest]
         fn it_works() {
             let config: Config = Config::from_toml(TOML_CONTENT).unwrap();
+
+            let vars = config.vars;
+            expect_eq!(
+                vars,
+                vec![
+                    ("CONFIG_DIR".into(), "${HOME}/.config".into()),
+                    (
+                        "DESKTOP_DIR".into(),
+                        "${HOME}/.local/share/applications".into()
+                    ),
+                    ("NU_AUTOLOAD".into(), "${HOME}/.config/nu/autoload".into()),
+                ]
+            );
 
             expect_eq!(config.packages.len(), 3);
 

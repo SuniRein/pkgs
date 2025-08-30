@@ -46,7 +46,7 @@ fn load(config: &Config, modules: Vec<String>, mut runner: Runner) -> Result<()>
 
     for name in modules {
         let pkg_trace = trace.packages.get(&name);
-        let package = config.get(&name);
+        let package = config.get(&name)?;
 
         match runner.load_module(&package, pkg_trace) {
             Ok(pkg_trace) => {

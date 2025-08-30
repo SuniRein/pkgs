@@ -4,7 +4,7 @@ use googletest::Result;
 
 use super::common_runner;
 use super::file::TempDir;
-use crate::config::{NamedPackage, Package, PackageType};
+use crate::config::{NamedPackage, Package, PackageType, VarMap};
 use crate::logger::NullOutput;
 use crate::runner::Runner;
 
@@ -22,7 +22,7 @@ pub fn common_local_pkg() -> Result<(TempDir, NamedPackage, Runner<NullOutput>)>
     let dst_file_path = td.join(DST_FILE_PATH).to_str().unwrap().to_string();
     let dst_dir_path = td.join(DST_DIR_PATH).to_str().unwrap().to_string();
 
-    let pkgs = NamedPackage::new(
+    let pkgs = NamedPackage::try_new(
         "test_package",
         Package {
             kind: PackageType::Local,
@@ -31,7 +31,8 @@ pub fn common_local_pkg() -> Result<(TempDir, NamedPackage, Runner<NullOutput>)>
                 ("src_dir".into(), dst_dir_path),
             ]),
         },
-    );
+        VarMap::try_new(&[])?,
+    )?;
 
     let runner = common_runner(td.path());
 

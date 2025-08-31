@@ -25,6 +25,10 @@ This project also plans to integrate Git version management to provide a way to 
 
 ## Installation
 
+```bash
+cargo install pkgs-cli --locked
+```
+
 ## Usage guide
 
 Create a `pkgs.toml` configuration file in a directory that contains packages. The syntax is as follows:

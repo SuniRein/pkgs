@@ -26,6 +26,10 @@ Stow 的管理方式比较死板，需要保存完整的文件系统路径，且
 
 ## 软件安装
 
+```bash
+cargo install pkgs-cli --locked
+```
+
 ## 使用指南
 
 在存在包的目录下创建名为 `pkgs.toml` 的配置文件，语法如下：

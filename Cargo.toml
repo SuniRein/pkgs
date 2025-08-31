@@ -1,8 +1,19 @@
 [package]
-name = "pkgs"
+name = "pkgs-cli"
 version = "0.1.0"
-description = "A simple cli tool to manage packages."
 edition = "2024"
+license = "GPL-3.0"
+authors = ["SuniRein <sunireincn@gmail.com>"]
+description = "A simple cli tool to manage packages."
+repository = "https://github.com/SuniRein/pkgs"
+
+[lib]
+name = "pkgs"
+path = "src/lib.rs"
+
+[[bin]]
+name = "pkgs"
+path = "src/main.rs"
 
 [dependencies]
 anyhow = "1.0.99"

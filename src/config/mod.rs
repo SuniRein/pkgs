@@ -1,5 +1,5 @@
 mod error;
-mod name_package;
+mod named_package;
 mod read;
 mod var;
 
@@ -9,7 +9,7 @@ use serde::Deserialize;
 use tuple_vec_map;
 
 pub use error::{PkgsParseError, VarsBuildError, VarsParseError};
-pub use name_package::NamedPackage;
+pub use named_package::NamedPackage;
 pub use read::ConfigError;
 pub use var::VarMap;
 

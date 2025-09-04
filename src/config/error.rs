@@ -26,4 +26,7 @@ pub enum PkgsParseError {
 
     #[error(transparent)]
     VarsParse(#[from] VarsParseError),
+
+    #[error("could not get filename from path '{0}'")]
+    NoneFilename(String),
 }

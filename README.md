@@ -52,7 +52,9 @@ type = "local" # Package type, optional; defaults to "local". Currently only "lo
 "yazi.toml" = "${YAZI_DIR}/yazi.toml"         # Left side can be a file inside the package
 "my-custom" = "${YAZI_DIR}/plugins/my-plugin" # It can also be a directory
 "keymap.toml" = "${YAZI_DIR}/keymap.toml"     # Right side is the path where the symlink will be created
-"yazi.nu" = "${NU_DIR}/autoload/yazi.nu"
+
+"yazi.nu" = "${NU_DIR}/autoload/yazi.nu"      # If the mapped file has the same name,
+                                              # you can end the path with '/' to omit the filename.
 
 [packages.nu.maps]
 "config.nu" = "{NU_DIR}/config.nu"

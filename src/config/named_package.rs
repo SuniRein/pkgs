@@ -1,15 +1,16 @@
 use std::collections::BTreeMap;
+use std::path::Path;
 
-use super::{Config, PkgsParseError, VarMap, VarsParseError};
+use super::{Config, PkgsParseError, VarMap};
 use crate::config::{Package, PackageType};
 
 impl Config {
     pub fn get(&self, name: &str) -> Result<NamedPackage, PkgsParseError> {
-        Ok(NamedPackage::try_new(
+        NamedPackage::try_new(
             name,
             self.packages[name].clone(),
             VarMap::try_new(&self.vars)?, // PERF: varmap will be built multiple times here
-        )?)
+        )
     }
 }
 
@@ -21,10 +22,23 @@ pub struct NamedPackage {
 }
 
 impl NamedPackage {
-    pub fn try_new(name: &str, package: Package, vars: VarMap) -> Result<Self, VarsParseError> {
+    pub fn try_new(name: &str, package: Package, vars: VarMap) -> Result<Self, PkgsParseError> {
         let mut maps = BTreeMap::new();
         for (k, v) in package.maps {
-            maps.insert(k, vars.parse(&v)?);
+            let mut v = vars.parse(&v)?;
+
+            let k_path = Path::new(&k);
+            if v.ends_with('/') {
+                v.push_str(
+                    k_path
+                        .file_name()
+                        .ok_or_else(|| PkgsParseError::NoneFilename(k.clone()))?
+                        .to_string_lossy()
+                        .as_ref(),
+                );
+            }
+
+            maps.insert(k, v);
         }
 
         Ok(Self {
@@ -138,5 +152,70 @@ mod tests {
         expect_that!(err, pat!(PkgsParseError::VarsParse(_)));
 
         Ok(())
+    }
+
+    mod trailing_slash {
+        use super::*;
+
+        fn setup(src: &str, dst: &str) -> Config {
+            let vars = vec![
+                ("APP_DIR".to_string(), "${HOME}/myapp".to_string()),
+                ("MY_VAR1".to_string(), "hello/".to_string()),
+            ];
+
+            let packages = BTreeMap::from_iter([(
+                "test_pkg".to_string(),
+                Package {
+                    kind: PackageType::Local,
+                    maps: BTreeMap::from_iter([(src.to_string(), dst.to_string())]),
+                },
+            )]);
+
+            Config { vars, packages }
+        }
+
+        #[gtest]
+        fn common_trailing_slash() -> Result<()> {
+            let src = "path/to/trailing_slash";
+            let config = setup(src, "/usr/bin/");
+            let pkg = config.get("test_pkg")?;
+
+            expect_eq!(pkg.maps()[src], "/usr/bin/trailing_slash");
+
+            Ok(())
+        }
+
+        #[gtest]
+        fn no_trailing_slash() -> Result<()> {
+            let src = "path/to/no_trailing_slash";
+            let config = setup(src, "/usr/local/bin");
+            let pkg = config.get("test_pkg")?;
+
+            expect_eq!(pkg.maps()[src], "/usr/local/bin");
+
+            Ok(())
+        }
+
+        #[gtest]
+        fn trailing_slash_in_var() -> Result<()> {
+            let src = "path/to/trailing_var";
+            let config = setup(src, "${MY_VAR1}");
+            let pkg = config.get("test_pkg")?;
+
+            expect_eq!(pkg.maps()[src], "hello/trailing_var");
+
+            Ok(())
+        }
+
+        #[gtest]
+        fn no_filename() -> Result<()> {
+            let src = "no_filename/..";
+            let config = setup(src, "/usr/bin/");
+            let err = config.get("test_pkg").unwrap_err();
+
+            expect_that!(err, pat!(PkgsParseError::NoneFilename(src)));
+
+            Ok(())
+        }
     }
 }

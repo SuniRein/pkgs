@@ -52,10 +52,11 @@ type = "local" # 包类型，可选，默认为 local，当前仅支持 local
 "yazi.toml" = "${YAZI_DIR}/yazi.toml"         # maps 左边可以是包下面的一个文件
 "my-custom" = "${YAZI_DIR}/plugins/my-plugin" # 也可以是一个文件夹
 "keymap.toml" = "${YAZI_DIR}/keymap.toml"     # 右边则是对应要创建的软链接
-"yazi.nu" = "${NU_DIR}/autoload/yazi.nu"
+
+"yazi.nu" = "${NU_DIR}/autoload/"             # 若映射文件同名，可直接以 / 结尾，省略文件名
 
 [packages.nu.maps]
-"config.nu" = "{NU_DIR}/config.nu"
+"config.nu" = "{NU_DIR}/"
 ```
 
 支持以下命令：

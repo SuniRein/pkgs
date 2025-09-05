@@ -46,6 +46,7 @@ mod tests {
         CONFIG_DIR = "${HOME}/.config"
         DESKTOP_DIR = "${HOME}/.local/share/applications"
         NU_AUTOLOAD = "${HOME}/.config/nu/autoload"
+        A_VAR = "a value with ${CONFIG} inside"
 
         [packages.yazi]
         type = "local"
@@ -75,13 +76,14 @@ mod tests {
             let vars = config.vars;
             expect_eq!(
                 vars,
-                vec![
+                [
                     ("CONFIG_DIR".into(), "${HOME}/.config".into()),
                     (
                         "DESKTOP_DIR".into(),
                         "${HOME}/.local/share/applications".into()
                     ),
                     ("NU_AUTOLOAD".into(), "${HOME}/.config/nu/autoload".into()),
+                    ("A_VAR".into(), "a value with ${CONFIG} inside".into()), // preserve order
                 ]
             );
 

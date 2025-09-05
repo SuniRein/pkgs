@@ -1,3 +1,4 @@
+mod de_map_as_vec;
 mod error;
 mod named_package;
 mod read;
@@ -6,7 +7,8 @@ mod var;
 use std::collections::BTreeMap;
 
 use serde::Deserialize;
-use tuple_vec_map;
+
+use de_map_as_vec::deserialize_map_as_vec;
 
 pub use error::{PkgsParseError, VarsBuildError, VarsParseError};
 pub use named_package::NamedPackage;
@@ -15,7 +17,7 @@ pub use var::VarMap;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Config {
-    #[serde(default, with = "tuple_vec_map")]
+    #[serde(default, deserialize_with = "deserialize_map_as_vec")]
     pub vars: Vec<(String, String)>,
     pub packages: BTreeMap<String, Package>,
 }

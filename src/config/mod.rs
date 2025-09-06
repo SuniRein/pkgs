@@ -27,6 +27,9 @@ pub struct Package {
     #[serde(default)]
     pub kind: PackageType,
 
+    #[serde(default, deserialize_with = "deserialize_map_as_vec")]
+    pub vars: Vec<(String, String)>,
+
     #[serde(default)]
     pub maps: BTreeMap<String, String>,
 }

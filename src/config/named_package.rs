@@ -22,7 +22,9 @@ pub struct NamedPackage {
 }
 
 impl NamedPackage {
-    pub fn try_new(name: &str, package: Package, vars: VarMap) -> Result<Self, PkgsParseError> {
+    pub fn try_new(name: &str, package: Package, mut vars: VarMap) -> Result<Self, PkgsParseError> {
+        vars.extends(&package.vars)?;
+
         let mut maps = BTreeMap::new();
         for (k, v) in package.maps {
             let mut v = vars.parse(&v)?;
@@ -94,6 +96,7 @@ mod tests {
             "test_pkg".to_string(),
             Package {
                 kind: PackageType::Local,
+                vars: vec![],
                 maps: BTreeMap::from_iter([
                     ("app_dir".to_string(), "${APP_DIR}".to_string()),
                     ("path".to_string(), "/usr/local/${MY_VAR2}".to_string()),
@@ -121,6 +124,28 @@ mod tests {
         );
         expect_eq!(pkg.maps()["path"], "/usr/local/hello_world");
         expect_eq!(pkg.maps()["config"], "hello_config");
+
+        Ok(())
+    }
+
+    #[gtest]
+    fn local_vars() -> Result<()> {
+        let mut config = setup();
+        config
+            .packages
+            .get_mut("test_pkg")
+            .unwrap()
+            .vars
+            .push(("MY_VAR1".to_string(), "hi".to_string()));
+
+        let pkg = config.get("test_pkg")?;
+        expect_eq!(pkg.maps().len(), 3);
+        expect_eq!(
+            pkg.maps()["app_dir"],
+            home_dir().join("myapp").to_str().unwrap()
+        );
+        expect_eq!(pkg.maps()["path"], "/usr/local/hello_world");
+        expect_eq!(pkg.maps()["config"], "hi_config");
 
         Ok(())
     }
@@ -167,6 +192,7 @@ mod tests {
                 "test_pkg".to_string(),
                 Package {
                     kind: PackageType::Local,
+                    vars: vec![],
                     maps: BTreeMap::from_iter([(src.to_string(), dst.to_string())]),
                 },
             )]);
@@ -218,4 +244,6 @@ mod tests {
             Ok(())
         }
     }
+
+    mod local_vars {}
 }

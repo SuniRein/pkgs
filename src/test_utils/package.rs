@@ -26,6 +26,7 @@ pub fn common_local_pkg() -> Result<(TempDir, NamedPackage, Runner<NullOutput>)>
         "test_package",
         Package {
             kind: PackageType::Local,
+            vars: vec![],
             maps: BTreeMap::from([
                 ("src_file".into(), dst_file_path),
                 ("src_dir".into(), dst_dir_path),

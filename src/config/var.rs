@@ -16,13 +16,25 @@ impl VarMap {
     pub fn try_new(vars: &[(String, String)]) -> Result<Self, VarsBuildError> {
         let mut ret = Self::default();
         for (var, value) in vars {
-            let value = ret.parse(value).map_err(|kind| VarsBuildError {
-                var: var.clone(),
-                kind,
-            })?;
-            ret.map.insert(var.clone(), value);
+            ret.add_var(var, value)?;
         }
         Ok(ret)
+    }
+
+    pub fn extends(&mut self, vars: &[(String, String)]) -> Result<(), VarsBuildError> {
+        for (var, value) in vars {
+            self.add_var(var, value)?;
+        }
+        Ok(())
+    }
+
+    fn add_var(&mut self, var: &str, value: &str) -> Result<(), VarsBuildError> {
+        let value = self.parse(value).map_err(|kind| VarsBuildError {
+            var: var.to_string(),
+            kind,
+        })?;
+        self.map.insert(var.to_string(), value);
+        Ok(())
     }
 
     pub fn map(&self) -> &HashMap<String, String> {
@@ -88,6 +100,35 @@ mod tests {
         let var_map = VarMap::try_new(&[])?;
         expect_eq!(var_map.map()["HOME"], home_dir().to_str().unwrap());
         Ok(())
+    }
+
+    mod extend_vars {
+        use super::*;
+
+        #[gtest]
+        fn add_new() -> Result<()> {
+            let mut var_map = setup()?;
+            let len = var_map.map().len();
+
+            var_map.extends(&[("NEW_VAR".into(), "new_value".into())])?;
+            expect_eq!(var_map.map().len(), len + 1);
+            expect_eq!(var_map.map()["NEW_VAR"], "new_value");
+
+            Ok(())
+        }
+
+        #[gtest]
+        fn override_existing() -> Result<()> {
+            let mut var_map = setup()?;
+            let len = var_map.map().len();
+
+            var_map.extends(&[("MY_VAR1".into(), "${MY_VAR1}_new".into())])?;
+            expect_eq!(var_map.map().len(), len);
+            expect_eq!(var_map.map()["MY_VAR1"], "hello_new");
+            expect_eq!(var_map.map()["MY_VAR2"], "hello_world");
+
+            Ok(())
+        }
     }
 
     #[gtest]

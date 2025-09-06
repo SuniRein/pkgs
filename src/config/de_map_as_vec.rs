@@ -56,7 +56,7 @@ mod tests {
     }
 
     #[gtest]
-    fn it_works() -> Result<()> {
+    fn parse_toml() -> Result<()> {
         let toml = indoc! {r#"
             [items]
             a = 1
@@ -67,6 +67,33 @@ mod tests {
         "#};
 
         let my: My = toml::from_str(toml)?;
+
+        expect_eq!(
+            my.items,
+            [
+                ("a".into(), 1),
+                ("d".into(), 4),
+                ("g".into(), -1),
+                ("b".into(), 2),
+                ("c".into(), 3),
+            ]
+        );
+
+        Ok(())
+    }
+
+    #[gtest]
+    fn parse_yaml() -> Result<()> {
+        let yaml = indoc! {r#"
+            items:
+              a: 1
+              d: 4
+              g: -1
+              b: 2
+              c: 3
+        "#};
+
+        let my: My = serde_yaml_ng::from_str(yaml)?;
 
         expect_eq!(
             my.items,

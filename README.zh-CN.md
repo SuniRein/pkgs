@@ -32,7 +32,10 @@ cargo install pkgs-cli --locked
 
 ## 使用指南
 
-在存在包的目录下创建名为 `pkgs.toml` 的配置文件，语法如下：
+在存在包的目录下创建描述文件，支持 TOML 和 YAML 两种格式，如下所示：
+
+<details>
+<summary>pkgs.toml</summary>
 
 ```toml
 # vars 字段，可选，用于配置变量
@@ -40,13 +43,15 @@ cargo install pkgs-cli --locked
 # 如要引用其他变量，必须按顺序声明
 [vars]
 CONFIG_DIR = "${HOME}/.config" # HOME 变量已内置
-APP_DIR = "${HOME}/Apps$"
-YAZI_DIR = "${CONFIG_DIR}/yazi"
+APP_DIR = "${HOME}/Apps"
 NU_DIR = "${CONFIG_DIR}/nushell"
 
 # packages 字段，必选，其下每个表对应一个包，对应当前目录下与包同名的目录
 [packages.yazi]
 type = "local" # 包类型，可选，默认为 local，当前仅支持 local
+
+[packages.yazi.vars] # 包局部变量，仅在包内部可见
+YAZI_DIR = "${CONFIG_DIR}/yazi"
 
 [packages.yazi.maps] # maps 下的每个关系对应一个映射
 "yazi.toml" = "${YAZI_DIR}/yazi.toml"         # maps 左边可以是包下面的一个文件
@@ -56,8 +61,44 @@ type = "local" # 包类型，可选，默认为 local，当前仅支持 local
 "yazi.nu" = "${NU_DIR}/autoload/"             # 若映射文件同名，可直接以 / 结尾，省略文件名
 
 [packages.nu.maps]
-"config.nu" = "{NU_DIR}/"
+"config.nu" = "${NU_DIR}/"
 ```
+
+</details>
+
+<details>
+<summary>pkgs.yaml / pkgs.yml</summary>
+
+```yaml
+# vars 字段，可选，用于配置变量
+# 使用 ${var} 语法以调用变量
+# 如要引用其他变量，必须按顺序声明
+vars:
+  CONFIG_DIR: ${HOME}/.config # HOME 变量已内置
+  APP_DIR: ${HOME}/Apps
+  NU_DIR: ${CONFIG_DIR}/nushell
+
+# packages 字段，必选，其下每个表对应一个包，对应当前目录下与包同名的目录
+packages:
+  yazi:
+    type: local # 包类型，可选，默认为 local，当前仅支持 local
+
+    vars: # 包局部变量，仅在包内部可见
+      YAZI_DIR: ${CONFIG_DIR}/yazi
+
+    maps: # maps 下的每个关系对应一个映射
+      yazi.toml: ${YAZI_DIR}/yazi.toml         # maps 左边可以是包下面的一个文件
+      my-custom: ${YAZI_DIR}/plugins/my-plugin # 也可以是一个文件夹
+      keymap.toml: ${YAZI_DIR}/keymap.toml     # 右边则是对应要创建的软链接
+
+      yazi.nu: ${NU_DIR}/autoload/             # 若映射文件同名，可直接以 / 结尾，省略文件名
+
+  nu:
+    maps:
+      config.nu: ${NU_DIR}/
+```
+
+</details>
 
 支持以下命令：
 

@@ -31,7 +31,10 @@ cargo install pkgs-cli --locked
 
 ## Usage guide
 
-Create a `pkgs.toml` configuration file in a directory that contains packages. The syntax is as follows:
+Create a descriptor file in the directory where the packages exist. Supports both TOML and YAML formats, as shown below:
+
+<details>
+<summary>pkgs.toml</summary>
 
 ```toml
 # Optional `vars` section, used to define variables
@@ -39,8 +42,7 @@ Create a `pkgs.toml` configuration file in a directory that contains packages. T
 # If you reference other variables, they must be declared in order
 [vars]
 CONFIG_DIR = "${HOME}/.config" # HOME variable is built-in
-APP_DIR = "${HOME}/Apps$"
-YAZI_DIR = "${CONFIG_DIR}/yazi"
+APP_DIR = "${HOME}/Apps"
 NU_DIR = "${CONFIG_DIR}/nushell"
 
 # `packages` section is required; each table under it corresponds to a package,
@@ -48,17 +50,58 @@ NU_DIR = "${CONFIG_DIR}/nushell"
 [packages.yazi]
 type = "local" # Package type, optional; defaults to "local". Currently only "local" is supported.
 
+[packages.yazi.vars] # Package-local variables, visible only within the package
+YAZI_DIR = "${CONFIG_DIR}/yazi"
+
 [packages.yazi.maps] # Each entry under `maps` represents a mapping
 "yazi.toml" = "${YAZI_DIR}/yazi.toml"         # Left side can be a file inside the package
 "my-custom" = "${YAZI_DIR}/plugins/my-plugin" # It can also be a directory
 "keymap.toml" = "${YAZI_DIR}/keymap.toml"     # Right side is the path where the symlink will be created
 
-"yazi.nu" = "${NU_DIR}/autoload/yazi.nu"      # If the mapped file has the same name,
+"yazi.nu" = "${NU_DIR}/autoload/"             # If the mapped file has the same name,
                                               # you can end the path with '/' to omit the filename.
 
 [packages.nu.maps]
-"config.nu" = "{NU_DIR}/config.nu"
+"config.nu" = "${NU_DIR}/"
 ```
+
+</details>
+
+<details>
+<summary>pkgs.yaml / pkgs.yml</summary>
+
+```yaml
+# Optional `vars` section, used to define variables
+# Use the ${var} syntax to reference variables
+# If you reference other variables, they must be declared in order
+vars:
+  CONFIG_DIR: ${HOME}/.config # HOME variable is built-in
+  APP_DIR: ${HOME}/Apps
+  NU_DIR: ${CONFIG_DIR}/nushell
+
+# `packages` section is required; each table under it corresponds to a package,
+# and should match a directory with the same name in the current directory
+packages:
+  yazi:
+    type: local # Package type, optional; defaults to "local". Currently only "local" is supported.
+
+    vars: # Package-local variables, visible only within the package
+      YAZI_DIR: ${CONFIG_DIR}/yazi
+
+    maps: # Each entry under `maps` represents a mapping
+      yazi.toml: ${YAZI_DIR}/yazi.toml         # Left side can be a file inside the package
+      my-custom: ${YAZI_DIR}/plugins/my-plugin # It can also be a directory
+      keymap.toml: ${YAZI_DIR}/keymap.toml     # Right side is the path where the symlink will be created
+
+      yazi.nu: ${NU_DIR}/autoload/             # If the mapped file has the same name,
+                                               # you may end with / and omit the filename
+
+  nu:
+    maps:
+      config.nu: ${NU_DIR}/
+```
+
+</details>
 
 The following commands are supported:
 

@@ -3,17 +3,19 @@ use std::path::PathBuf;
 use super::{Runner, RunnerError};
 use crate::config::Config;
 use crate::logger::LoggerOutput;
-use crate::meta::{PKGS_DIR, TOML_CONFIG_FILE};
+use crate::meta::{PKGS_DIR, TOML_CONFIG_FILE, YAML_CONFIG_FILE, YML_CONFIG_FILE};
 
 impl<O: LoggerOutput> Runner<O> {
     pub fn read_config(&self) -> Result<Config, RunnerError> {
-        let toml_path = self.cwd.join(TOML_CONFIG_FILE);
-        if !toml_path.exists() {
-            return Err(RunnerError::ConfigNotFound);
+        let candidates = [TOML_CONFIG_FILE, YAML_CONFIG_FILE, YML_CONFIG_FILE];
+        for name in candidates {
+            let path = self.cwd.join(name);
+            if path.exists() {
+                let config = Config::read(&path)?;
+                return Ok(config);
+            }
         }
-
-        let config = Config::read(&self.cwd.join(TOML_CONFIG_FILE))?;
-        Ok(config)
+        Err(RunnerError::ConfigNotFound)
     }
 
     pub fn create_pkgs_dir(&mut self) -> Result<PathBuf, RunnerError> {
@@ -58,6 +60,52 @@ mod tests {
                 indoc! {r#"
                     [packages.test.maps]
                     src_file = "dst_file"
+                "#},
+            )?;
+            let runner = common_runner(td.path());
+            let config = runner.read_config()?;
+
+            expect_eq!(config.packages.len(), 1);
+
+            let test_pkg = &config.packages["test"];
+            expect_eq!(test_pkg.kind, PackageType::Local);
+            expect_eq!(test_pkg.maps["src_file"], "dst_file");
+
+            Ok(())
+        }
+
+        #[gtest]
+        fn read_yaml() -> Result<()> {
+            let td = TempDir::new()?.file(
+                YAML_CONFIG_FILE,
+                indoc! {r#"
+                    packages:
+                      test:
+                        maps:
+                          src_file: dst_file
+                "#},
+            )?;
+            let runner = common_runner(td.path());
+            let config = runner.read_config()?;
+
+            expect_eq!(config.packages.len(), 1);
+
+            let test_pkg = &config.packages["test"];
+            expect_eq!(test_pkg.kind, PackageType::Local);
+            expect_eq!(test_pkg.maps["src_file"], "dst_file");
+
+            Ok(())
+        }
+
+        #[gtest]
+        fn read_yml() -> Result<()> {
+            let td = TempDir::new()?.file(
+                YML_CONFIG_FILE,
+                indoc! {r#"
+                    packages:
+                      test:
+                        maps:
+                          src_file: dst_file
                 "#},
             )?;
             let runner = common_runner(td.path());

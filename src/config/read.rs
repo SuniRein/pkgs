@@ -2,6 +2,7 @@ use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 
+use serde_yaml_ng::Error as YamlDeError;
 use thiserror::Error;
 use toml::de::Error as TomlDeError;
 
@@ -12,8 +13,11 @@ pub enum ConfigError {
     #[error(transparent)]
     Io(#[from] io::Error),
 
-    #[error("parse error: {0}")]
-    Parse(#[from] TomlDeError),
+    #[error("TOML parse error: {0}")]
+    TomlParse(#[from] TomlDeError),
+
+    #[error("YAML parse error: {0}")]
+    YamlParse(#[from] YamlDeError),
 
     #[error("unsupported file format: {0}")]
     UnsupportedFileFormat(PathBuf),
@@ -24,13 +28,18 @@ impl Config {
         let content = fs::read_to_string(path)?;
 
         match path.extension().and_then(|s| s.to_str()) {
-            Some("toml") => Self::from_toml(&content).map_err(ConfigError::Parse),
+            Some("toml") => Self::from_toml(&content).map_err(ConfigError::TomlParse),
+            Some("yaml") | Some("yml") => Self::from_yaml(&content).map_err(ConfigError::YamlParse),
             _ => Err(ConfigError::UnsupportedFileFormat(path.to_path_buf())),
         }
     }
 
     pub fn from_toml(content: &str) -> Result<Self, TomlDeError> {
         toml::from_str(content)
+    }
+
+    pub fn from_yaml(content: &str) -> Result<Self, YamlDeError> {
+        serde_yaml_ng::from_str(content)
     }
 }
 
@@ -62,17 +71,44 @@ mod tests {
         [packages."empty maps"]
     "#};
 
-    fn expect_map(map: &BTreeMap<String, String>, key: &str, value: &str) {
-        expect_that!(map.get(key), some(eq(value)));
-    }
+    const YAML_CONTENT: &str = indoc! {r#"
+        vars:
+          CONFIG_DIR: ${HOME}/.config
+          DESKTOP_DIR: ${HOME}/.local/share/applications
+          NU_AUTOLOAD: ${HOME}/.config/nu/autoload
+          A_VAR: a value with ${CONFIG} inside
 
-    mod toml_parse {
+        packages:
+          yazi:
+            type: local
+            maps:
+              yazi: ${CONFIG_DIR}/yazi
+              "yazi.nu": ${NU_AUTOLOAD}/yazi.nu
+
+          kitty:
+            maps:
+              kitty: ${CONFIG_DIR}/kitty
+              kitty.desktop: ${DESKTOP_DIR}/kitty.desktop
+
+          empty maps: {}
+    "#};
+
+    mod parse {
         use super::*;
 
         #[gtest]
-        fn it_works() {
+        fn toml_parse() {
             let config: Config = Config::from_toml(TOML_CONTENT).unwrap();
+            validate_config(config);
+        }
 
+        #[gtest]
+        fn yaml_parse() {
+            let config: Config = Config::from_yaml(YAML_CONTENT).unwrap();
+            validate_config(config);
+        }
+
+        fn validate_config(config: Config) {
             let vars = config.vars;
             expect_eq!(
                 vars,
@@ -114,6 +150,10 @@ mod tests {
             expect_eq!(config.packages["empty maps"].kind, PackageType::Local);
             expect_that!(config.packages["empty maps"].maps, is_empty());
         }
+
+        fn expect_map(map: &BTreeMap<String, String>, key: &str, value: &str) {
+            expect_that!(map.get(key), some(eq(value)));
+        }
     }
 
     mod read {
@@ -128,9 +168,22 @@ mod tests {
         }
 
         #[gtest]
-        fn it_works() {
+        fn read_toml() {
             let file = setup(".toml", TOML_CONTENT);
+            let config = Config::read(file.path()).unwrap();
+            expect_eq!(config.packages.len(), 3);
+        }
 
+        #[gtest]
+        fn read_yaml() {
+            let file = setup(".yaml", YAML_CONTENT);
+            let config = Config::read(file.path()).unwrap();
+            expect_eq!(config.packages.len(), 3);
+        }
+
+        #[gtest]
+        fn read_yml() {
+            let file = setup(".yml", YAML_CONTENT);
             let config = Config::read(file.path()).unwrap();
             expect_eq!(config.packages.len(), 3);
         }
@@ -140,7 +193,7 @@ mod tests {
             let file = setup(".toml", "invalid toml content");
 
             let err = Config::read(file.path()).unwrap_err();
-            expect_that!(err, pat!(ConfigError::Parse(_)));
+            expect_that!(err, pat!(ConfigError::TomlParse(_)));
         }
 
         #[gtest]

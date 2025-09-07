@@ -16,20 +16,24 @@ pub struct Cli {
 pub enum Command {
     /// Load modules
     Load {
-        /// the modules to load
+        /// The modules to load
         #[command(flatten)]
         modules: Modules,
     },
 
     /// Unload modules
     Unload {
-        /// the modules to unload
+        /// The modules to unload
         #[command(flatten)]
         modules: Modules,
     },
 
     /// List available modules
-    List,
+    List {
+        /// List one module per line
+        #[arg(short('1'), long)]
+        oneline: bool,
+    },
 }
 
 #[cfg(test)]

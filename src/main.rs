@@ -24,10 +24,14 @@ fn main() -> Result<()> {
     match &cli.command {
         Command::Load { modules } => load(&config, modules.get(available)?, runner),
         Command::Unload { modules } => unload(modules.get(available)?, runner),
-        Command::List => {
+        Command::List { oneline } => {
             println!(
                 "{}",
-                available.into_iter().cloned().collect::<Vec<_>>().join(" ")
+                available
+                    .into_iter()
+                    .cloned()
+                    .collect::<Vec<_>>()
+                    .join(if *oneline { "\n" } else { " " })
             );
             Ok(())
         }

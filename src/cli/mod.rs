@@ -34,6 +34,9 @@ pub enum Command {
         #[arg(short('1'), long)]
         oneline: bool,
     },
+
+    /// Generate json schema for configuration file
+    Schema,
 }
 
 #[cfg(test)]

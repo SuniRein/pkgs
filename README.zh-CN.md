@@ -111,6 +111,8 @@ pkgs load yazi nu # 仅加载 yazi 与 nu
 
 pkgs unload --all # 卸载所有包
 pkgs unload yazi nu # 仅卸载 yazi 与 nu
+
+pkgs schema # 为描述文件生成 Json Schema
 ```
 
 ### 行为

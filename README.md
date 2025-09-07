@@ -114,6 +114,8 @@ pkgs load yazi nu # Load only yazi and nu
 
 pkgs unload --all # Unload all packages
 pkgs unload yazi nu # Unload only yazi and nu
+
+pkgs schema # Generate json schema for descriptor file
 ```
 
 ### Behavior

@@ -2,6 +2,7 @@ use std::io::Stdout;
 
 use anyhow::Result;
 use clap::Parser;
+use schemars::schema_for;
 
 use pkgs::cli::{Cli, Command};
 use pkgs::config::Config;
@@ -13,6 +14,12 @@ type Runner = pkgs::runner::Runner<WriterOutput<Stdout>>;
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
+
+    if let Command::Schema = &cli.command {
+        let schema = schema_for!(Config);
+        println!("{}", serde_json::to_string_pretty(&schema)?);
+        return Ok(());
+    };
 
     let cwd = std::env::current_dir()?;
     let stdout = WriterOutput::new(std::io::stdout());
@@ -35,6 +42,7 @@ fn main() -> Result<()> {
             );
             Ok(())
         }
+        Command::Schema => unreachable!(),
     }
 }
 

@@ -200,27 +200,21 @@ mod tests {
             runner.load_module(&pkg, None)?;
 
             let messages = runner.messages();
-            expect_eq!(messages.len(), 5);
-            expect_that!(messages[0], pat!(LogMessage::LoadModule("test_package")));
-            expect_that!(
-                messages,
-                superset_of([
-                    &LogMessage::CreateDir(td.join("./test_pkg")),
-                    &LogMessage::CreateSymlink {
+            expect_eq!(
+                *messages,
+                [
+                    LogMessage::LoadModule("test_package".into()),
+                    LogMessage::CreateDir(td.join("./test_pkg")),
+                    LogMessage::CreateSymlink {
                         src: td.join(SRC_FILE_PATH).canonicalize()?,
                         dst: td.join(DST_FILE_PATH)
-                    }
-                ])
-            );
-            expect_that!(
-                messages,
-                superset_of([
-                    &LogMessage::CreateDir(td.join("./test_a/test_b")),
-                    &LogMessage::CreateSymlink {
+                    },
+                    LogMessage::CreateDir(td.join("./test_a/test_b")),
+                    LogMessage::CreateSymlink {
                         src: td.join(SRC_DIR_PATH).canonicalize()?,
                         dst: td.join(DST_DIR_PATH)
                     }
-                ])
+                ]
             );
 
             Ok(())

@@ -126,33 +126,28 @@ mod tests {
             expect_eq!(config.packages.len(), 3);
 
             expect_eq!(config.packages["yazi"].kind, PackageType::Local);
-            expect_eq!(config.packages["yazi"].maps.len(), 2);
-            expect_map(&config.packages["yazi"].maps, "yazi", "${CONFIG_DIR}/yazi");
-            expect_map(
-                &config.packages["yazi"].maps,
-                "yazi.nu",
-                "${NU_AUTOLOAD}/yazi.nu",
+            expect_eq!(
+                config.packages["yazi"].maps,
+                [
+                    ("yazi".into(), "${CONFIG_DIR}/yazi".into()),
+                    ("yazi.nu".into(), "${NU_AUTOLOAD}/yazi.nu".into())
+                ]
             );
 
             expect_eq!(config.packages["kitty"].kind, PackageType::Local);
-            expect_eq!(config.packages["kitty"].maps.len(), 2);
-            expect_map(
-                &config.packages["kitty"].maps,
-                "kitty",
-                "${CONFIG_DIR}/kitty",
-            );
-            expect_map(
-                &config.packages["kitty"].maps,
-                "kitty.desktop",
-                "${DESKTOP_DIR}/kitty.desktop",
+            expect_eq!(
+                config.packages["kitty"].maps,
+                [
+                    ("kitty".into(), "${CONFIG_DIR}/kitty".into()),
+                    (
+                        "kitty.desktop".into(),
+                        "${DESKTOP_DIR}/kitty.desktop".into()
+                    )
+                ]
             );
 
             expect_eq!(config.packages["empty maps"].kind, PackageType::Local);
             expect_that!(config.packages["empty maps"].maps, is_empty());
-        }
-
-        fn expect_map(map: &BTreeMap<String, String>, key: &str, value: &str) {
-            expect_that!(map.get(key), some(eq(value)));
         }
     }
 

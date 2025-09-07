@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use std::path::Path;
 
 use super::{Config, PkgsParseError, VarMap};
@@ -18,30 +17,33 @@ impl Config {
 pub struct NamedPackage {
     name: String,
     kind: PackageType,
-    maps: BTreeMap<String, String>,
+    maps: Vec<(String, String)>,
 }
 
 impl NamedPackage {
     pub fn try_new(name: &str, package: Package, mut vars: VarMap) -> Result<Self, PkgsParseError> {
         vars.extends(&package.vars)?;
 
-        let mut maps = BTreeMap::new();
-        for (k, v) in package.maps {
-            let mut v = vars.parse(&v)?;
+        let maps = package
+            .maps
+            .into_iter()
+            .map(|(k, v)| {
+                let mut v = vars.parse(&v)?;
 
-            let k_path = Path::new(&k);
-            if v.ends_with('/') {
-                v.push_str(
-                    k_path
-                        .file_name()
-                        .ok_or_else(|| PkgsParseError::NoneFilename(k.clone()))?
-                        .to_string_lossy()
-                        .as_ref(),
-                );
-            }
+                let k_path = Path::new(&k);
+                if v.ends_with('/') {
+                    v.push_str(
+                        k_path
+                            .file_name()
+                            .ok_or_else(|| PkgsParseError::NoneFilename(k.clone()))?
+                            .to_string_lossy()
+                            .as_ref(),
+                    );
+                }
 
-            maps.insert(k, v);
-        }
+                Ok((k, v))
+            })
+            .collect::<Result<Vec<_>, PkgsParseError>>()?;
 
         Ok(Self {
             name: name.to_string(),
@@ -64,24 +66,26 @@ impl NamedPackage {
         self.kind
     }
 
-    pub fn maps(&self) -> &BTreeMap<String, String> {
+    pub fn maps(&self) -> &[(String, String)] {
         &self.maps
     }
 
     #[cfg(test)]
     pub fn insert_map(&mut self, key: impl AsRef<str>, value: impl AsRef<str>) {
         self.maps
-            .insert(key.as_ref().to_string(), value.as_ref().to_string());
+            .push((key.as_ref().to_string(), value.as_ref().to_string()));
     }
 
     #[cfg(test)]
     pub fn remove_map(&mut self, key: impl AsRef<str>) {
-        self.maps.remove(key.as_ref());
+        self.maps.retain(|(k, _)| k.as_str() != key.as_ref());
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::collections::BTreeMap;
+
     use super::*;
     use crate::{fs::home_dir, test_utils::prelude::*};
 
@@ -97,11 +101,11 @@ mod tests {
             Package {
                 kind: PackageType::Local,
                 vars: vec![],
-                maps: BTreeMap::from_iter([
+                maps: vec![
                     ("app_dir".to_string(), "${APP_DIR}".to_string()),
                     ("path".to_string(), "/usr/local/${MY_VAR2}".to_string()),
                     ("config".to_string(), "${MY_VAR1}_config".to_string()),
-                ]),
+                ],
             },
         )]);
 
@@ -117,13 +121,17 @@ mod tests {
         expect_eq!(pkg.kind(), PackageType::Local);
         expect_eq!(pkg.get_directory(), "test_pkg");
 
-        expect_eq!(pkg.maps().len(), 3);
         expect_eq!(
-            pkg.maps()["app_dir"],
-            home_dir().join("myapp").to_str().unwrap()
+            *pkg.maps(),
+            [
+                (
+                    "app_dir".into(),
+                    home_dir().join("myapp").to_str().unwrap().into()
+                ),
+                ("path".into(), "/usr/local/hello_world".into()),
+                ("config".into(), "hello_config".into())
+            ]
         );
-        expect_eq!(pkg.maps()["path"], "/usr/local/hello_world");
-        expect_eq!(pkg.maps()["config"], "hello_config");
 
         Ok(())
     }
@@ -139,13 +147,17 @@ mod tests {
             .push(("MY_VAR1".to_string(), "hi".to_string()));
 
         let pkg = config.get("test_pkg")?;
-        expect_eq!(pkg.maps().len(), 3);
         expect_eq!(
-            pkg.maps()["app_dir"],
-            home_dir().join("myapp").to_str().unwrap()
+            *pkg.maps(),
+            [
+                (
+                    "app_dir".into(),
+                    home_dir().join("myapp").to_str().unwrap().into()
+                ),
+                ("path".into(), "/usr/local/hello_world".into()),
+                ("config".into(), "hi_config".into())
+            ]
         );
-        expect_eq!(pkg.maps()["path"], "/usr/local/hello_world");
-        expect_eq!(pkg.maps()["config"], "hi_config");
 
         Ok(())
     }
@@ -171,7 +183,7 @@ mod tests {
             .get_mut("test_pkg")
             .unwrap()
             .maps
-            .insert("bad".to_string(), "${UNKNOWN}".to_string());
+            .push(("bad".to_string(), "${UNKNOWN}".to_string()));
 
         let err = config.get("test_pkg").unwrap_err();
         expect_that!(err, pat!(PkgsParseError::VarsParse(_)));
@@ -193,7 +205,7 @@ mod tests {
                 Package {
                     kind: PackageType::Local,
                     vars: vec![],
-                    maps: BTreeMap::from_iter([(src.to_string(), dst.to_string())]),
+                    maps: vec![(src.to_string(), dst.to_string())],
                 },
             )]);
 
@@ -206,7 +218,10 @@ mod tests {
             let config = setup(src, "/usr/bin/");
             let pkg = config.get("test_pkg")?;
 
-            expect_eq!(pkg.maps()[src], "/usr/bin/trailing_slash");
+            expect_eq!(
+                *pkg.maps(),
+                [(src.into(), "/usr/bin/trailing_slash".into())]
+            );
 
             Ok(())
         }
@@ -217,7 +232,7 @@ mod tests {
             let config = setup(src, "/usr/local/bin");
             let pkg = config.get("test_pkg")?;
 
-            expect_eq!(pkg.maps()[src], "/usr/local/bin");
+            expect_eq!(*pkg.maps(), [(src.into(), "/usr/local/bin".into())]);
 
             Ok(())
         }
@@ -228,7 +243,7 @@ mod tests {
             let config = setup(src, "${MY_VAR1}");
             let pkg = config.get("test_pkg")?;
 
-            expect_eq!(pkg.maps()[src], "hello/trailing_var");
+            expect_eq!(*pkg.maps(), [(src.into(), "hello/trailing_var".into())]);
 
             Ok(())
         }

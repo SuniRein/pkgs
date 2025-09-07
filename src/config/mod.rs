@@ -34,8 +34,9 @@ pub struct Package {
     #[schemars(with = "BTreeMap<String, String>")]
     pub vars: Vec<(String, String)>,
 
-    #[serde(default)]
-    pub maps: BTreeMap<String, String>,
+    #[serde(default, deserialize_with = "deserialize_map_as_vec")]
+    #[schemars(with = "BTreeMap<String, String>")]
+    pub maps: Vec<(String, String)>,
 }
 
 #[derive(Debug, Clone, Copy, Deserialize, JsonSchema, Default, PartialEq, Eq)]

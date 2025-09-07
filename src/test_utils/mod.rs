@@ -12,7 +12,6 @@ pub fn common_runner(cwd: impl AsRef<Path>) -> Runner<NullOutput> {
 }
 
 pub mod prelude {
-    pub use std::collections::BTreeMap;
     pub use std::path::PathBuf;
 
     pub use googletest::prelude::*;

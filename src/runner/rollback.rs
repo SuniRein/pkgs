@@ -83,40 +83,28 @@ mod tests {
             let (td, pkg, mut runner) = common_local_pkg()?;
 
             runner.load_module(&pkg, None)?;
-            let msgs = runner.messages()[1..].to_vec();
             let rollback_begin = runner.messages().len();
 
             runner.rollback()?;
-            let rollback_msgs = runner.messages()[rollback_begin..].to_vec();
-
-            expect_that!(
-                rollback_msgs[0],
-                pat!(LogMessage::RollbackLoadModule("test_package"))
-            );
-            expect_eq!(rollback_msgs.len(), msgs.len() + 1);
 
             expect_pred!(!td.join(DST_DIR_PATH).exists());
             expect_pred!(!td.join(DST_FILE_PATH).exists());
 
-            expect_that!(
-                rollback_msgs,
-                superset_of([
-                    &LogMessage::RemoveSymlink {
-                        src: td.join(SRC_FILE_PATH).canonicalize()?,
-                        dst: td.join(DST_FILE_PATH)
-                    },
-                    &LogMessage::RemoveDir(td.join("./test_pkg")),
-                ])
-            );
-            expect_that!(
-                rollback_msgs,
-                superset_of([
-                    &LogMessage::RemoveSymlink {
+            expect_eq!(
+                runner.messages()[rollback_begin..],
+                [
+                    LogMessage::RollbackLoadModule("test_package".into()),
+                    LogMessage::RemoveSymlink {
                         src: td.join(SRC_DIR_PATH).canonicalize()?,
                         dst: td.join(DST_DIR_PATH)
                     },
-                    &LogMessage::RemoveDir(td.join("./test_a/test_b")),
-                ])
+                    LogMessage::RemoveDir(td.join("./test_a/test_b")),
+                    LogMessage::RemoveSymlink {
+                        src: td.join(SRC_FILE_PATH).canonicalize()?,
+                        dst: td.join(DST_FILE_PATH)
+                    },
+                    LogMessage::RemoveDir(td.join("./test_pkg")),
+                ]
             );
 
             Ok(())
@@ -125,37 +113,27 @@ mod tests {
         #[gtest]
         fn after_failure() -> Result<()> {
             let (td, pkg, mut runner) = common_local_pkg()?;
-            fs::remove_file(td.join(SRC_FILE_PATH))?;
+            fs::remove_dir(td.join(SRC_DIR_PATH))?;
 
             let _ = runner.load_module(&pkg, None).unwrap_err();
-            let msgs = runner.messages()[1..].to_vec();
             let rollback_begin = runner.messages().len();
-            let load_src_dir = td.join(DST_DIR_PATH).exists();
 
             runner.rollback()?;
-            let rollback_msgs = runner.messages()[rollback_begin..].to_vec();
-
-            expect_that!(
-                rollback_msgs[0],
-                pat!(LogMessage::RollbackLoadModule("test_package"))
-            );
-            expect_eq!(rollback_msgs.len(), msgs.len() + 1);
 
             expect_pred!(!td.join(DST_DIR_PATH).exists());
             expect_pred!(!td.join(DST_FILE_PATH).exists());
 
-            if load_src_dir {
-                expect_that!(
-                    rollback_msgs,
-                    superset_of([
-                        &LogMessage::RemoveSymlink {
-                            src: td.join(SRC_DIR_PATH).canonicalize()?,
-                            dst: td.join(DST_DIR_PATH)
-                        },
-                        &LogMessage::RemoveDir(td.join("./test_a/test_b")),
-                    ])
-                );
-            }
+            expect_eq!(
+                runner.messages()[rollback_begin..].to_vec(),
+                [
+                    LogMessage::RollbackLoadModule("test_package".into()),
+                    LogMessage::RemoveSymlink {
+                        src: td.join(SRC_FILE_PATH).canonicalize()?,
+                        dst: td.join(DST_FILE_PATH)
+                    },
+                    LogMessage::RemoveDir(td.join("./test_pkg")),
+                ]
+            );
 
             Ok(())
         }
@@ -172,28 +150,23 @@ mod tests {
             let mut runner = common_runner(td.path());
             runner.load_module(&pkg, Some(&trace))?;
 
-            let msgs = runner.messages()[1..].to_vec();
             let rollback_begin = runner.messages().len();
 
             runner.rollback()?;
-            let rollback_msgs = runner.messages()[rollback_begin..].to_vec();
-
-            expect_that!(
-                rollback_msgs[0],
-                pat!(LogMessage::RollbackLoadModule("test_package"))
-            );
-            expect_eq!(rollback_msgs.len(), msgs.len() + 1);
 
             expect_pred!(td.join(DST_DIR_PATH).exists());
             expect_pred!(td.join(DST_FILE_PATH).exists());
             expect_pred!(!td.join("new_dst_file").exists());
 
-            expect_that!(
-                rollback_msgs,
-                superset_of([&LogMessage::RemoveSymlink {
-                    src: td.join(new_src_file).canonicalize()?,
-                    dst: td.join("new_dst_file")
-                },])
+            expect_eq!(
+                runner.messages()[rollback_begin..].to_vec(),
+                [
+                    LogMessage::RollbackLoadModule("test_package".into()),
+                    LogMessage::RemoveSymlink {
+                        src: td.join(new_src_file).canonicalize()?,
+                        dst: td.join("new_dst_file")
+                    }
+                ]
             );
 
             Ok(())

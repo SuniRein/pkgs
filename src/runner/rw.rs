@@ -69,7 +69,7 @@ mod tests {
 
             let test_pkg = &config.packages["test"];
             expect_eq!(test_pkg.kind, PackageType::Local);
-            expect_eq!(test_pkg.maps["src_file"], "dst_file");
+            expect_eq!(test_pkg.maps, [("src_file".into(), "dst_file".into())]);
 
             Ok(())
         }
@@ -92,7 +92,7 @@ mod tests {
 
             let test_pkg = &config.packages["test"];
             expect_eq!(test_pkg.kind, PackageType::Local);
-            expect_eq!(test_pkg.maps["src_file"], "dst_file");
+            expect_eq!(test_pkg.maps, [("src_file".into(), "dst_file".into())]);
 
             Ok(())
         }
@@ -115,7 +115,7 @@ mod tests {
 
             let test_pkg = &config.packages["test"];
             expect_eq!(test_pkg.kind, PackageType::Local);
-            expect_eq!(test_pkg.maps["src_file"], "dst_file");
+            expect_eq!(test_pkg.maps, [("src_file".into(), "dst_file".into())]);
 
             Ok(())
         }

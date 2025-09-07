@@ -1,5 +1,3 @@
-use std::collections::BTreeMap;
-
 use googletest::Result;
 
 use super::common_runner;
@@ -27,10 +25,10 @@ pub fn common_local_pkg() -> Result<(TempDir, NamedPackage, Runner<NullOutput>)>
         Package {
             kind: PackageType::Local,
             vars: vec![],
-            maps: BTreeMap::from([
+            maps: vec![
                 ("src_file".into(), dst_file_path),
                 ("src_dir".into(), dst_dir_path),
-            ]),
+            ],
         },
         VarMap::try_new(&[])?,
     )?;

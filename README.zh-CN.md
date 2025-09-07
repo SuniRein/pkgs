@@ -125,6 +125,11 @@ pkgs schema # 为描述文件生成 Json Schema
 
 `unload` 命令则是通过读取 `.pkgs/trace.toml` 来卸载相应的包。当卸载出错时，也会进行**回滚**操作。
 
+> [!warning]
+> 变量的加载顺序以及包中映射的创建顺序与描述文件中的相同。
+>
+> 不过，在加载或卸载包时，不同包会按照字典序执行而不是在描述文件中的顺序，因此请不要依赖包之间的顺序。
+
 ## 许可协议
 
 项目采用 [GPL-3.0 协议](https://www.gnu.org/licenses/gpl-3.0.en.html)开源，详见 [LICENSE](./LICENSE)。

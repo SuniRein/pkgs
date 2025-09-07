@@ -126,6 +126,12 @@ If a parent directory for a target path does not exist during loading, the tool 
 
 The `unload` command removes packages by reading `.pkgs/trace.toml`. If an error occurs during unload, a **rollback** will also be performed.
 
+> [!warning]
+> The order of variable loading and the creation of mappings within a package follow the order in the description file.
+>
+> However, when loading or unloading packages, different packages are processed in lexicographical order
+> rather than the order in the description file. Therefore, do not rely on the order between packages.
+
 ## License
 
 This project is open-source under the [GPL-3.0 License](https://www.gnu.org/licenses/gpl-3.0.en.html). See [LICENSE](./LICENSE) for details.

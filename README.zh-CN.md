@@ -48,7 +48,7 @@ NU_DIR = "${CONFIG_DIR}/nushell"
 
 # packages 字段，必选，其下每个表对应一个包，对应当前目录下与包同名的目录
 [packages.yazi]
-type = "local" # 包类型，可选，默认为 local，当前仅支持 local
+kind = "local" # 包类型，可选，默认为 local，当前仅支持 local
 
 [packages.yazi.vars] # 包局部变量，仅在包内部可见
 YAZI_DIR = "${CONFIG_DIR}/yazi"
@@ -81,7 +81,7 @@ vars:
 # packages 字段，必选，其下每个表对应一个包，对应当前目录下与包同名的目录
 packages:
   yazi:
-    type: local # 包类型，可选，默认为 local，当前仅支持 local
+    kind: local # 包类型，可选，默认为 local，当前仅支持 local
 
     vars: # 包局部变量，仅在包内部可见
       YAZI_DIR: ${CONFIG_DIR}/yazi

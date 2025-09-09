@@ -48,7 +48,7 @@ NU_DIR = "${CONFIG_DIR}/nushell"
 # `packages` section is required; each table under it corresponds to a package,
 # and should match a directory with the same name in the current directory
 [packages.yazi]
-type = "local" # Package type, optional; defaults to "local". Currently only "local" is supported.
+kind = "local" # Package type, optional; defaults to "local". Currently only "local" is supported.
 
 [packages.yazi.vars] # Package-local variables, visible only within the package
 YAZI_DIR = "${CONFIG_DIR}/yazi"
@@ -83,7 +83,7 @@ vars:
 # and should match a directory with the same name in the current directory
 packages:
   yazi:
-    type: local # Package type, optional; defaults to "local". Currently only "local" is supported.
+    kind: local # Package type, optional; defaults to "local". Currently only "local" is supported.
 
     vars: # Package-local variables, visible only within the package
       YAZI_DIR: ${CONFIG_DIR}/yazi

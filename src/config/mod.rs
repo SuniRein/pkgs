@@ -21,6 +21,7 @@ fn empty_map() -> BTreeMap<String, String> {
 }
 
 #[derive(Debug, Clone, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct Config {
     #[serde(default, deserialize_with = "deserialize_map_as_vec")]
     #[schemars(default = "empty_map", with = "BTreeMap<String, String>")]
@@ -30,6 +31,7 @@ pub struct Config {
 }
 
 #[derive(Debug, Clone, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct Package {
     #[serde(default)]
     pub kind: PackageType,
@@ -44,7 +46,7 @@ pub struct Package {
 }
 
 #[derive(Debug, Clone, Copy, Deserialize, JsonSchema, Default, PartialEq, Eq)]
-#[serde(rename_all = "kebab-case")]
+#[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub enum PackageType {
     #[default]
     Local,

@@ -58,7 +58,7 @@ mod tests {
         A_VAR = "a value with ${CONFIG} inside"
 
         [packages.yazi]
-        type = "local"
+        kind = "local"
 
         [packages.yazi.maps]
         yazi = "${CONFIG_DIR}/yazi"
@@ -80,7 +80,7 @@ mod tests {
 
         packages:
           yazi:
-            type: local
+            kind: local
             maps:
               yazi: ${CONFIG_DIR}/yazi
               "yazi.nu": ${NU_AUTOLOAD}/yazi.nu
@@ -106,6 +106,17 @@ mod tests {
         fn yaml_parse() {
             let config: Config = Config::from_yaml(YAML_CONTENT).unwrap();
             validate_config(config);
+        }
+
+        #[gtest]
+        fn deny_unknown_fields_toml() {
+            let content = indoc! {r#"
+                [packages.yazi]
+                type = "local"
+            "#};
+
+            let err = Config::from_toml(content).unwrap_err();
+            expect_that!(err, pat!(TomlDeError { .. }));
         }
 
         fn validate_config(config: Config) {

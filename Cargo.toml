@@ -26,7 +26,10 @@ thiserror = "2.0.16"
 toml = { version = "0.9.5", features = ["preserve_order"] }
 
 [dev-dependencies]
+assert_cmd = "2.0.17"
 googletest = "0.14.2"
 indoc = "2.0.6"
+jsonschema = "0.33.0"
+rstest = "0.26.1"
 serde_test = "1.0.177"
 tempfile = "3.21.0"

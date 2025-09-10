@@ -98,7 +98,7 @@ mod tests {
     #[gtest]
     fn default_vars() -> Result<()> {
         let var_map = VarMap::try_new(&[])?;
-        expect_eq!(var_map.map()["HOME"], home_dir().to_str().unwrap());
+        expect_eq!(var_map.map()["HOME"], home_dir().to_string_lossy());
         Ok(())
     }
 
@@ -134,10 +134,10 @@ mod tests {
     #[gtest]
     fn custom_vars() -> Result<()> {
         let var_map = setup()?;
-        expect_eq!(var_map.map()["HOME"], home_dir().to_str().unwrap());
+        expect_eq!(var_map.map()["HOME"], home_dir().to_string_lossy());
         expect_eq!(
             var_map.map()["CONFIG_DIR"],
-            home_dir().join(".config").to_str().unwrap()
+            home_dir().join(".config").to_string_lossy()
         );
         expect_eq!(var_map.map()["MY_VAR1"], "hello");
         expect_eq!(var_map.map()["MY_VAR2"], "hello_world");
@@ -170,7 +170,7 @@ mod tests {
             let var_map = setup()?;
             expect_eq!(
                 var_map.parse("${CONFIG_DIR}/test")?,
-                home_dir().join(".config/test").to_str().unwrap()
+                home_dir().join(".config/test").to_string_lossy()
             );
             expect_eq!(
                 var_map.parse("/tmp/${MY_VAR1}/${MY_VAR2}/${MY_VAR1}")?,

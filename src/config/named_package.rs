@@ -126,7 +126,7 @@ mod tests {
             [
                 (
                     "app_dir".into(),
-                    home_dir().join("myapp").to_str().unwrap().into()
+                    home_dir().join("myapp").to_string_lossy().into_owned()
                 ),
                 ("path".into(), "/usr/local/hello_world".into()),
                 ("config".into(), "hello_config".into())
@@ -152,7 +152,7 @@ mod tests {
             [
                 (
                     "app_dir".into(),
-                    home_dir().join("myapp").to_str().unwrap().into()
+                    home_dir().join("myapp").to_string_lossy().into_owned()
                 ),
                 ("path".into(), "/usr/local/hello_world".into()),
                 ("config".into(), "hi_config".into())

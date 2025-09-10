@@ -184,11 +184,11 @@ mod tests {
             expect_eq!(trace.maps.len(), 2);
             expect_eq!(
                 trace.maps["src_file"],
-                td.join(DST_FILE_PATH).to_str().unwrap()
+                td.join(DST_FILE_PATH).to_string_lossy()
             );
             expect_eq!(
                 trace.maps["src_dir"],
-                td.join(DST_DIR_PATH).to_str().unwrap()
+                td.join(DST_DIR_PATH).to_string_lossy()
             );
 
             Ok(())
@@ -313,7 +313,7 @@ mod tests {
             expect_eq!(new_trace.maps["src_dir"], trace.maps["src_dir"]);
             expect_eq!(
                 new_trace.maps["src_file"],
-                td.join("new_dest_file").to_str().unwrap()
+                td.join("new_dest_file").to_string_lossy()
             );
 
             expect_that!(
@@ -349,7 +349,7 @@ mod tests {
             expect_eq!(new_trace.maps["src_file"], trace.maps["src_file"]);
             expect_eq!(
                 new_trace.maps["new_src_file"],
-                new_dst_path.to_str().unwrap(),
+                new_dst_path.to_string_lossy()
             );
 
             expect_that!(

@@ -37,7 +37,7 @@ where
                 MatcherResult::Match => "is",
                 MatcherResult::NoMatch => "isn't",
             },
-            self.src.to_string_lossy()
+            self.src.display()
         )
         .into()
     }
@@ -57,7 +57,7 @@ where
         } else {
             format!(
                 "which is a symlink but points to a different path '{}'",
-                link.to_string_lossy()
+                link.display()
             )
             .into()
         }
@@ -106,8 +106,8 @@ mod tests {
                 Actual: "{}",
                   which is a symlink pointing to the targeted path
             "#,
-                src.to_string_lossy(),
-                dst.to_string_lossy(),
+                src.display(),
+                dst.display(),
             })))
         )
     }
@@ -131,9 +131,9 @@ mod tests {
                 Actual: "{}",
                   which is a symlink but points to a different path '{}'
             "#,
-                src.join("../src").to_string_lossy(),
-                dst.to_string_lossy(),
-                src.to_string_lossy(),
+                src.join("../src").display(),
+                dst.display(),
+                src.display(),
             })))
         )
     }
@@ -156,8 +156,8 @@ mod tests {
                 Actual: "{}",
                   which doesn't exist
             "#,
-                src.to_string_lossy(),
-                dst.to_string_lossy(),
+                src.display(),
+                dst.display(),
             })))
         )
     }
@@ -181,8 +181,8 @@ mod tests {
                 Actual: "{}",
                   which isn't a symlink
             "#,
-                src.to_string_lossy(),
-                dst.to_string_lossy(),
+                src.display(),
+                dst.display(),
             })))
         )
     }

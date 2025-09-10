@@ -17,8 +17,8 @@ pub fn common_local_pkg() -> Result<(TempDir, NamedPackage, Runner<NullOutput>)>
         .dir(SRC_DIR_PATH)?
         .file(SRC_FILE_PATH, "test_content")?;
 
-    let dst_file_path = td.join(DST_FILE_PATH).to_str().unwrap().to_string();
-    let dst_dir_path = td.join(DST_DIR_PATH).to_str().unwrap().to_string();
+    let dst_file_path = td.join(DST_FILE_PATH).to_string_lossy().into_owned();
+    let dst_dir_path = td.join(DST_DIR_PATH).to_string_lossy().into_owned();
 
     let pkgs = NamedPackage::try_new(
         "test_package",

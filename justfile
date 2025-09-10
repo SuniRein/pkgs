@@ -7,3 +7,6 @@ coverage:
 coverage-tarpaulin:
     cargo tarpaulin --out html
     xdg-open tarpaulin-report.html
+
+changelog version:
+    @git cliff --unreleased --tag {{version}}

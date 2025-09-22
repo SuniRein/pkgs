@@ -30,6 +30,16 @@ fn content() -> String {
         "path/to/src_dir" = "path/to/dst_dir"
         "a.with_ext" = "b.with_ext"
 
+        [packages.b]
+        kind = "git"
+        url = "https://github.com/hallo"
+
+        [packages.b.vars]
+        local_var = "Local"
+
+        [packages.b.maps]
+        src_file = "dst_file"
+
         [packages."empty maps"]
     "#}
     .to_string()
@@ -50,7 +60,7 @@ fn parse_correct_file(schema: JsonValue, content: String) -> Result<()> {
 
 #[rstest]
 #[gtest]
-fn kind_can_omit(schema: JsonValue, mut content: String) -> Result<()> {
+fn kind_can_omit_for_local(schema: JsonValue, mut content: String) -> Result<()> {
     content = content.replace("[packages.a]\nkind = \"local\"\n", "");
 
     let value = read_toml(&content)?;
@@ -59,10 +69,32 @@ fn kind_can_omit(schema: JsonValue, mut content: String) -> Result<()> {
 }
 
 #[rstest]
+#[gtest]
+fn kind_can_not_omit_for_git(schema: JsonValue, mut content: String) -> Result<()> {
+    content = content.replace("kind = \"git\"\n", "");
+
+    let value = read_toml(&content)?;
+    assert_that!(validate(&schema, &value), err(anything()));
+    Ok(())
+}
+
+#[rstest]
+#[gtest]
+fn url_can_not_omit_for_git(schema: JsonValue, mut content: String) -> Result<()> {
+    content = content.replace("url = \"https://github.com/hallo\"\n", "");
+
+    let value = read_toml(&content)?;
+    assert_that!(validate(&schema, &value), err(anything()));
+    Ok(())
+}
+
+#[rstest]
 #[case("vars")]
 #[case("packages.a")]
 #[case("packages.a.vars")]
 #[case("packages.a.maps")]
+#[case("packages.b.maps")]
+#[case("packages.b.vars")]
 #[gtest]
 fn some_field_can_omit(schema: JsonValue, mut content: String, #[case] field: &str) -> Result<()> {
     let start = content.find(&format!("[{field}]")).unwrap();
@@ -78,6 +110,7 @@ fn some_field_can_omit(schema: JsonValue, mut content: String, #[case] field: &s
 #[case("kind", "type")]
 #[case("packages.a.vars", "packages.a.var")]
 #[case("packages.a.maps", "packages.a.map")]
+#[case("packages.b.maps", "packages.b.var")]
 #[gtest]
 fn unknown_fields(
     schema: JsonValue,

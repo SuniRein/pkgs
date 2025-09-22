@@ -1,4 +1,5 @@
 mod de_map_as_vec;
+mod de_pkg_type;
 mod error;
 mod named_package;
 mod read;
@@ -30,24 +31,31 @@ pub struct Config {
     pub packages: BTreeMap<String, Package>,
 }
 
-#[derive(Debug, Clone, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
+#[derive(Debug, Clone)]
 pub struct Package {
-    #[serde(default)]
     pub kind: PackageType,
-
-    #[serde(default, deserialize_with = "deserialize_map_as_vec")]
-    #[schemars(default = "empty_map", with = "BTreeMap<String, String>")]
     pub vars: Vec<(String, String)>,
-
-    #[serde(default, deserialize_with = "deserialize_map_as_vec")]
-    #[schemars(default = "empty_map", with = "BTreeMap<String, String>")]
     pub maps: Vec<(String, String)>,
 }
 
-#[derive(Debug, Clone, Copy, Deserialize, JsonSchema, Default, PartialEq, Eq)]
-#[serde(rename_all = "kebab-case", deny_unknown_fields)]
+#[derive(Debug, Clone, JsonSchema, Default, PartialEq, Eq)]
 pub enum PackageType {
     #[default]
     Local,
+    Git(GitPkg),
+}
+
+#[derive(Debug, Clone, Deserialize, JsonSchema, PartialEq, Eq)]
+pub struct GitPkg {
+    url: String,
+}
+
+impl PackageType {
+    pub fn unwrap_git(&self) -> &GitPkg {
+        if let Self::Git(pkg) = self {
+            pkg
+        } else {
+            panic!("not a git package kind")
+        }
+    }
 }

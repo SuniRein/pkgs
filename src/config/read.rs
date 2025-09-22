@@ -68,6 +68,10 @@ mod tests {
         kitty = "${CONFIG_DIR}/kitty"
         "kitty.desktop" = "${DESKTOP_DIR}/kitty.desktop"
 
+        [packages.git]
+        kind = "git"
+        url = "https://github.com/my_repo/git_example"
+
         [packages."empty maps"]
     "#};
 
@@ -90,10 +94,16 @@ mod tests {
               kitty: ${CONFIG_DIR}/kitty
               kitty.desktop: ${DESKTOP_DIR}/kitty.desktop
 
+          git:
+            kind: git
+            url: https://github.com/my_repo/git_example
+
           empty maps: {}
     "#};
 
     mod parse {
+        use crate::config::GitPkg;
+
         use super::*;
 
         #[gtest]
@@ -134,7 +144,7 @@ mod tests {
                 ]
             );
 
-            expect_eq!(config.packages.len(), 3);
+            expect_eq!(config.packages.len(), 4);
 
             expect_eq!(config.packages["yazi"].kind, PackageType::Local);
             expect_eq!(
@@ -157,6 +167,13 @@ mod tests {
                 ]
             );
 
+            expect_eq!(
+                config.packages["git"].kind.unwrap_git(),
+                &GitPkg {
+                    url: "https://github.com/my_repo/git_example".into()
+                }
+            );
+
             expect_eq!(config.packages["empty maps"].kind, PackageType::Local);
             expect_that!(config.packages["empty maps"].maps, is_empty());
         }
@@ -177,21 +194,21 @@ mod tests {
         fn read_toml() {
             let file = setup(".toml", TOML_CONTENT);
             let config = Config::read(file.path()).unwrap();
-            expect_eq!(config.packages.len(), 3);
+            expect_eq!(config.packages.len(), 4);
         }
 
         #[gtest]
         fn read_yaml() {
             let file = setup(".yaml", YAML_CONTENT);
             let config = Config::read(file.path()).unwrap();
-            expect_eq!(config.packages.len(), 3);
+            expect_eq!(config.packages.len(), 4);
         }
 
         #[gtest]
         fn read_yml() {
             let file = setup(".yml", YAML_CONTENT);
             let config = Config::read(file.path()).unwrap();
-            expect_eq!(config.packages.len(), 3);
+            expect_eq!(config.packages.len(), 4);
         }
 
         #[gtest]

@@ -55,6 +55,7 @@ impl NamedPackage {
     pub fn get_directory(&self) -> String {
         match self.kind() {
             PackageType::Local => self.name.to_string(),
+            PackageType::Git(_) => todo!(),
         }
     }
 
@@ -62,8 +63,8 @@ impl NamedPackage {
         &self.name
     }
 
-    pub fn kind(&self) -> PackageType {
-        self.kind
+    pub fn kind(&self) -> &PackageType {
+        &self.kind
     }
 
     pub fn maps(&self) -> &[(String, String)] {
@@ -118,7 +119,7 @@ mod tests {
 
         let pkg = config.get("test_pkg")?;
         expect_eq!(pkg.name(), "test_pkg");
-        expect_eq!(pkg.kind(), PackageType::Local);
+        expect_eq!(pkg.kind(), &PackageType::Local);
         expect_eq!(pkg.get_directory(), "test_pkg");
 
         expect_eq!(

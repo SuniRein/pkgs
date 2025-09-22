@@ -260,6 +260,4 @@ mod tests {
             Ok(())
         }
     }
-
-    mod local_vars {}
 }
